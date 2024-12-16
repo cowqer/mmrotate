@@ -1,8 +1,8 @@
 # dataset settings
 dataset_type = 'SARDataset'
-data_root = 'data/ssdd/'
+data_root = '/data/seekyou/ssdd/'
 img_norm_cfg = dict(
-    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
+    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=False)
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotations', with_bbox=True),
@@ -42,6 +42,6 @@ data = dict(
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
-        ann_file=data_root + 'test/offshore/labelTxt/',
-        img_prefix=data_root + 'test/offshore/images/',
+        ann_file=data_root + 'test/all/labelTxt/',
+        img_prefix=data_root + 'test/all/images/',
         pipeline=test_pipeline))

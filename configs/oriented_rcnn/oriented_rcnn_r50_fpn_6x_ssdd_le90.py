@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/datasets/ssdd.py', '../_base_/schedules/schedule_3x.py',
+    '../_base_/datasets/ssdd.py', '../_base_/schedules/schedule_6x.py',
     '../_base_/default_runtime.py'
 ]
 
@@ -122,8 +122,11 @@ model = dict(
             nms=dict(iou_thr=0.1),
             max_per_img=2000)))
 
-img_norm_cfg = dict(
-    mean=[21.55, 21.55, 21.55], std=[24.42, 24.42, 24.42], to_rgb=True)
+img_norm_cfg = dict( mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=False)
+        # mean=[21.55],  # 根据你的数据集计算
+        # std=[24.42],   # 根据你的数据集计算, 
+        # to_rgb=False)
+
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotations', with_bbox=True),
@@ -143,10 +146,11 @@ data = dict(
     val=dict(version=angle_version),
     test=dict(version=angle_version))
 
+# optimizer = dict(lr=0.02)
 optimizer = dict(lr=0.005)
-
 # evaluation
-evaluation = dict(interval=72, metric='mAP')
+checkpoint_config = dict(interval=12)
+evaluation = dict(interval=1, metric='mAP', save_best='auto')
 # learning policy
 lr_config = dict(
     policy='step',
@@ -155,4 +159,4 @@ lr_config = dict(
     warmup_ratio=1.0 / 3,
     step=[65, 71])
 runner = dict(type='EpochBasedRunner', max_epochs=72)
-checkpoint_config = dict(interval=12)
+

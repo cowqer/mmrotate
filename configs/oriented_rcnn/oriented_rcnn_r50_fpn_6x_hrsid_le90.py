@@ -146,7 +146,7 @@ data = dict(
 optimizer = dict(lr=0.005)
 
 # evaluation
-evaluation = dict(interval=72, metric='mAP')
+evaluation = dict(interval=6, metric='mAP')
 # learning policy
 lr_config = dict(
     policy='step',
