@@ -4,10 +4,13 @@ from .enn import (build_enn_divide_feature, build_enn_feature,
                   ennConv, ennInterpolate, ennMaxPool, ennReLU, ennTrivialConv)
 from .orconv import ORConv2d
 from .ripool import RotationInvariantPooling
+from .adaptive_rotated_conv import AdaptiveRotatedConv2d
+from .routing_function import RountingFunction
 
 __all__ = [
     'ORConv2d', 'RotationInvariantPooling', 'ennConv', 'ennReLU', 'ennAvgPool',
     'ennMaxPool', 'ennInterpolate', 'build_enn_divide_feature',
     'build_enn_feature', 'build_enn_norm_layer', 'build_enn_trivial_feature',
-    'ennTrivialConv'
+    'ennTrivialConv','AdaptiveRotatedConv2d', 'RountingFunction',
 ]
+
