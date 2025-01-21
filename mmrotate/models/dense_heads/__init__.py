@@ -7,8 +7,11 @@ from .kfiou_rotate_retina_refine_head import KFIoURRetinaRefineHead
 from .odm_refine_head import ODMRefineHead
 from .oriented_reppoints_head import OrientedRepPointsHead
 from .oriented_rpn_head import OrientedRPNHead
+from .Pconv_oriented_rpn_head import PconvOrientedRPNHead
 from .AR_oriented_rpn_head import AR_OrientedRPNHead
 from .AR2_oriented_rpn_head import AR2_OrientedRPNHead
+# from .APconv_oriented_rpn_head import APconvOrientedRPNHead
+from .ADR_oriented_rpn_head import ADRconvOrientedRPNHead
 from .rotated_anchor_free_head import RotatedAnchorFreeHead
 from .rotated_anchor_head import RotatedAnchorHead
 from .rotated_atss_head import RotatedATSSHead
@@ -25,5 +28,7 @@ __all__ = [
     'KFIoURRetinaHead', 'KFIoURRetinaRefineHead', 'KFIoUODMRefineHead',
     'RotatedRepPointsHead', 'SAMRepPointsHead', 'CSLRRetinaHead',
     'RotatedATSSHead', 'RotatedAnchorFreeHead', 'RotatedFCOSHead',
-    'CSLRFCOSHead', 'OrientedRepPointsHead','AR_OrientedRPNHead','AR2_OrientedRPNHead'
+    'CSLRFCOSHead', 'OrientedRepPointsHead','AR_OrientedRPNHead',
+    'AR2_OrientedRPNHead','PconvOrientedRPNHead','ADRconvOrientedRPNHead',
+    # 'APconvOrientedRPNHead'
 ]

@@ -32,7 +32,7 @@ class Conv(nn.Module):
         """Perform transposed convolution of 2D data."""
         return self.act(self.conv(x))
 
-
+# out = F.conv2d(input=x, weight=rotated_weight, bias=None, stride=self.stride, padding=self.padding, dilation=self.dilation, groups=(self.groups * bs))
 class PConv(nn.Module):  
     ''' Pinwheel-shaped Convolution using the Asymmetric Padding method. '''
     

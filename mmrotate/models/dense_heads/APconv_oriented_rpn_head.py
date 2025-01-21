@@ -5,25 +5,37 @@ import torch
 import torch.nn as nn
 from mmcv.ops import batched_nms
 from mmdet.core import anchor_inside_flags, unmap
+import torch.nn.functional as F
 
 from mmrotate.core import obb2xyxy
 from ..builder import ROTATED_HEADS
 from .rotated_rpn_head import RotatedRPNHead
-
+from ..utils import APconv , RountingFunctionPro
 
 @ROTATED_HEADS.register_module()
-class OrientedRPNHead(RotatedRPNHead):
+class APconvOrientedRPNHead(RotatedRPNHead):
     """Oriented RPN head for Oriented R-CNN."""
 
     def _init_layers(self):
         """Initialize layers of the head."""
+        self.kernel_number=1
         self.rpn_conv = nn.Conv2d(
             self.in_channels, self.feat_channels, 3, padding=1)
-        
+        self.apconv = APconv(c1=3, c2=64, k=3, s=1, rounting_func=RountingFunctionPro(in_channels=self.feat_channels, kernel_number=self.kernel_number))
         self.rpn_cls = nn.Conv2d(self.feat_channels,
                                  self.num_anchors * self.cls_out_channels, 1)
         self.rpn_reg = nn.Conv2d(self.feat_channels, self.num_anchors * 6, 1)
-
+        
+    def forward_single(self, x):
+        """Forward feature map of a single scale level."""
+        x = self.rpn_conv(x)
+        x = self.apconv(x)
+        # x = torch.cat([x, self.arconv(x)], dim=1)
+        x = F.relu(x, inplace=True)
+        rpn_cls_score = self.rpn_cls(x)
+        rpn_bbox_pred = self.rpn_reg(x)
+        return rpn_cls_score, rpn_bbox_pred
+    
     def _get_targets_single(self,
                             flat_anchors,
                             valid_flags,
