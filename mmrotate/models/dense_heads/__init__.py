@@ -10,8 +10,9 @@ from .oriented_rpn_head import OrientedRPNHead
 from .Pconv_oriented_rpn_head import PconvOrientedRPNHead
 from .AR_oriented_rpn_head import AR_OrientedRPNHead
 from .AR2_oriented_rpn_head import AR2_OrientedRPNHead
-# from .APconv_oriented_rpn_head import APconvOrientedRPNHead
+from .AP_oriented_rpn_head import APconvOrientedRPNHead
 from .ADR_oriented_rpn_head import ADRconvOrientedRPNHead
+from .ADR_P_oriented_rpn_head import ADRPconvOrientedRPNHead
 from .rotated_anchor_free_head import RotatedAnchorFreeHead
 from .rotated_anchor_head import RotatedAnchorHead
 from .rotated_atss_head import RotatedATSSHead
@@ -30,5 +31,5 @@ __all__ = [
     'RotatedATSSHead', 'RotatedAnchorFreeHead', 'RotatedFCOSHead',
     'CSLRFCOSHead', 'OrientedRepPointsHead','AR_OrientedRPNHead',
     'AR2_OrientedRPNHead','PconvOrientedRPNHead','ADRconvOrientedRPNHead',
-    # 'APconvOrientedRPNHead'
+    'APconvOrientedRPNHead','ADRPconvOrientedRPNHead',
 ]
