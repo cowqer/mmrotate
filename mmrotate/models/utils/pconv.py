@@ -47,24 +47,30 @@ class PConv(nn.Module):
         self.cat = Conv(c2, c2, 2, s=1, p=0)
 
     def forward(self, x):
+        # print(x.shape)
         yw0 = self.cw(self.pad[0](x))
         yw1 = self.cw(self.pad[1](x))
         yh0 = self.ch(self.pad[2](x))
         yh1 = self.ch(self.pad[3](x))
-        return self.cat(torch.cat([yw0, yw1, yh0, yh1], dim=1))
+        # print(yw0.shape, yw1.shape, yh0.shape, yh1.shape)
+        y0= torch.cat([yw0, yw1, yh0, yh1], dim=1)
+        # print(y0.shape)
+        y = self.cat(y0)
+        # print(y.shape)
+        return y
 
 if __name__ == "__main__":
     # Create a random input tensor of shape (batch_size, channels, height, width)
-    x = torch.randn(1, 3, 64, 64)  # 1 image, 3 channels, 64x64 size
+    x = torch.randn(1, 128, 64, 64)  # 1 image, 3 channels, 64x64 size
     
     # Create an instance of PConv
-    pconv = PConv(c1=3, c2=64, k=3, s=1)
+    pconv = PConv(c1=128, c2=128, k=3, s=1)
     
     # Forward pass
     output = pconv(x)
     
     # Print output shape
-    print("Output shape:", output.shape)
+    # print("Output shape:", output.shape)
 
 # class APC2f(nn.Module):
 #     """Faster Implementation of APCSP Bottleneck with Asymmetric Padding convolutions."""
