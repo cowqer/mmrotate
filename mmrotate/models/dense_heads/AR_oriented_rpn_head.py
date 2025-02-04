@@ -14,7 +14,7 @@ from ..utils import AdaptiveRotatedConv2d
 from ..utils import RountingFunction
 
 @ROTATED_HEADS.register_module()
-class AR_LossOrientedRPNHead(RotatedRPNHead):
+class AR_OrientedRPNHead(RotatedRPNHead):
     """Oriented RPN head for Oriented R-CNN."""
 
     def _init_layers(self):

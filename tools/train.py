@@ -181,7 +181,7 @@ def main():
     model.CLASSES = datasets[0].CLASSES
     cfg.device = get_device()
     # cfg.device = 'cuda:1'##此行应该可以省略
-    torch.cuda.set_device(1)
+    # torch.cuda.set_device(1)
     
     train_detector(
         model,
