@@ -133,7 +133,7 @@ def bbox2delta(proposals,
     _y_coor = y_coor.clone()
     _y_coor[torch.abs(x_coor - x_max) > 0.1] = -1000
     gb, _ = torch.max(_y_coor, dim=1)
-
+    ####六中间参数定义
     dx = (gx - px) / pw
     dy = (gy - py) / ph
     dw = torch.log(gw / pw)

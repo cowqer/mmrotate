@@ -200,16 +200,32 @@ class ADRconvLossOrientedRPNHead(RotatedRPNHead):
         bbox_targets = bbox_targets.reshape(-1, 6)
         bbox_weights = bbox_weights.reshape(-1, 6)
         bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 6)
+        
+        # decode bbox_pred with anchors
+        """
+        这里的decode函数将六个参数解码为xywha,解码的函数为delta2bbox,
+        其最后进行了poly2obb,且格式为le90的转换,因此会使得xy变为x_ctr, y_ctr从而产生负数值-
+        这是因为其设定了原点为中心导致的。
+        """
+        # self.reg_decoded_bbox = True
         if self.reg_decoded_bbox:
             # When the regression loss (e.g. `IouLoss`, `GIouLoss`)
             # is applied directly on the decoded bounding boxes, it
             # decodes the already encoded coordinates to absolute format.
             anchors = anchors.reshape(-1, 4)
-            bbox_pred = self.bbox_coder.decode(anchors, bbox_pred)
+            decode_bbox_pred = self.bbox_coder.decode(anchors, bbox_pred)###在这里转换得到xywha,
+            print('decode_bbox_pred:',decode_bbox_pred)
         
         ###############add aspect ratio loss################
-        pred_w, pred_h = torch.max(bbox_pred[:, 2], bbox_pred[:, 3]), torch.min(bbox_pred[:, 2], bbox_pred[:, 3])
-        target_w, target_h = torch.max(bbox_targets[:, 2], bbox_targets[:, 3]), torch.min(bbox_targets[:, 2], bbox_targets[:, 3])
+        anchors_ = anchors.reshape(-1, 4)
+        decode_bbox_pred = self.bbox_coder.decode(anchors_, bbox_pred)###在这里转换得到xywha,
+        decode_bbox_gt = self.bbox_coder.decode(anchors_, bbox_targets)
+        
+        # print('decode_bbox_gt:',decode_bbox_gt)
+        # print('decode_bbox_pred:',decode_bbox_pred)
+        
+        pred_w, pred_h = torch.max(decode_bbox_pred[:, 2], decode_bbox_pred[:, 3]), torch.min(decode_bbox_pred[:, 2], decode_bbox_pred[:, 3])
+        target_w, target_h = torch.max(decode_bbox_gt[:, 2], decode_bbox_gt[:, 3]), torch.min(decode_bbox_gt[:, 2], decode_bbox_gt[:, 3])
         
         pred_aspect_ratio = pred_w / (pred_h + 1e-6)  
         target_aspect_ratio = target_w / (target_h + 1e-6)
