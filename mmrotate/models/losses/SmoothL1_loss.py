@@ -98,6 +98,7 @@ class SmoothL1Loss(nn.Module):
         assert reduction_override in (None, 'none', 'mean', 'sum')
         reduction = (
             reduction_override if reduction_override else self.reduction)
+        print(f"Shape of pred: {pred.shape}")
         loss_bbox = self.loss_weight * smooth_l1_loss(
             pred,
             target,

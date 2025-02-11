@@ -44,7 +44,7 @@ class ChannelShuffle(nn.Module):
         x = x.view(b, c, h, w)
         return x
 
-class GatedPConv(nn.Module):
+class GatedSPConv(nn.Module):
     ''' Pinwheel-shaped Convolution with Gating Mechanism '''
     
     def __init__(self, c1, c2, k, s):
@@ -71,6 +71,7 @@ class GatedPConv(nn.Module):
 
         # Final fusion layer
         self.fusion = Conv(c2, c2, 2, s=1, p=0)
+        self.ChannelShuffle = ChannelShuffle(groups=4)
 
     def forward(self, x):
         # Compute feature maps for each direction
@@ -92,7 +93,9 @@ class GatedPConv(nn.Module):
         # Weighted sum instead of simple concatenation
         fused = torch.cat([yw0, yw1, yh0, yh1], dim=1)
         # print(fused.shape)
+        fused = self.ChannelShuffle(fused)
         output = self.fusion(fused)
+        
         # print(output.shape)
         return output
 

@@ -14,7 +14,7 @@ from ..utils import AdaptiveRotatedConv2d
 from ..utils import RountingFunction
 
 @ROTATED_HEADS.register_module()
-class ADRconvLossOrientedRPNHead(RotatedRPNHead):
+class ADRconvLossOrientedRPNHead2(RotatedRPNHead):
     """Oriented RPN head for Oriented R-CNN."""
 
     def _init_layers(self):
@@ -106,7 +106,7 @@ class ADRconvLossOrientedRPNHead(RotatedRPNHead):
             None if self.sampling else gt_labels)
         sampling_result = self.sampler.sample(assign_result, anchors,
                                               gt_hbboxes)
-    
+
         if gt_bboxes.numel() == 0:
             sampling_result.pos_gt_bboxes = gt_bboxes.new(
                 (0, gt_bboxes.size(-1))).zero_()
@@ -124,6 +124,8 @@ class ADRconvLossOrientedRPNHead(RotatedRPNHead):
 
         pos_inds = sampling_result.pos_inds
         neg_inds = sampling_result.neg_inds
+
+
         if len(pos_inds) > 0:
             if not self.reg_decoded_bbox:
                 pos_bbox_targets = self.bbox_coder.encode(
@@ -156,43 +158,39 @@ class ADRconvLossOrientedRPNHead(RotatedRPNHead):
                                   inside_flags)
             bbox_targets = unmap(bbox_targets, num_total_anchors, inside_flags)
             bbox_weights = unmap(bbox_weights, num_total_anchors, inside_flags)
+            print("bbox_weights",bbox_weights)
 
         return (labels, label_weights, bbox_targets, bbox_weights, pos_inds,
                 neg_inds, sampling_result)
 
     def loss_single(self, cls_score, bbox_pred, anchors, labels, label_weights,
                     bbox_targets, bbox_weights, num_total_samples):
-        """计算单个尺度级别的损失。
+        """Compute loss of a single scale level.
 
-        参数:
-                cls_score (torch.Tensor): 每个尺度级别的框得分
-            形状为 (N, num_anchors * num_classes, H, W)。在特征映射的每个像素上的每个锚的预测分类得分。N 是批处理大小，
-                num_anchors 是锚框的数量，而 num_classes 是对象类的数量（包括背景）。对于特征图的高度和宽度，空间尺寸为 (H, W)。
-                bbox_pred (torch.Tensor): 每个尺度级别的框能量/增量
-            形状为 (N, num_anchors * 5, H, W)。
-            这代表了每个锚的预测边界框偏移，5 可以代表每个锚固中心和尺寸或 (x_ctr, y_ctr, w, h, angle) 的 (dx, dy, dw, dh) 相对偏移。
-            这些用于调整锚固框以适合预测的边界框。
-                anchors (torch.Tensor): 每个尺度级别的框参考
-            形状为 (N, num_total_anchors, 4)。
-            每个级别的地面真相锚点。在计算边界框回归目标时，它们被用作参考。每个锚框由 4 个值表示：
-            (x_min, y_min, x_max, y_max) 或 (center_x, center_y, width, height)。
-                labels (torch.Tensor): 每个锚的标签
-            形状为 (N, num_total_anchors)。
-                label_weights (torch.Tensor): 每个锚的标签权重
-            形状为 (N, num_total_anchors)。
-                bbox_targets (torch.Tensor): 每个锚的边界框回归目标
-            形状为 (N, num_total_anchors, 5)。
-            这些是每个锚的地面真相边界框回归目标，代表正确的偏移量以适用于锚点以匹配地面真相边界框。
-            如果 5 代表 (dx, dy, dw, dh) 或 (x_ctr, y_ctr, w, h, angle)，则这些是预测边界框应调整为的值。
-                bbox_weights (torch.Tensor): 每个锚的边界框回归损失权重
-            形状为 (N, num_total_anchors, 4)。
-            num_total_samples (int): 如果采样，总样本数等于总锚点数；否则，它是正锚点的数量。
+        Args:
+            cls_score (torch.Tensor): Box scores for each scale level
+                Has shape (N, num_anchors * num_classes, H, W).
+            bbox_pred (torch.Tensor): Box energies / deltas for each scale
+                level with shape (N, num_anchors * 5, H, W).
+            anchors (torch.Tensor): Box reference for each scale level with
+                shape (N, num_total_anchors, 4).
+            labels (torch.Tensor): Labels of each anchors with shape
+                (N, num_total_anchors).
+            label_weights (torch.Tensor): Label weights of each anchor with
+                shape (N, num_total_anchors)
+            bbox_targets (torch.Tensor): BBox regression targets of each anchor
+            weight shape (N, num_total_anchors, 5).
+            bbox_weights (torch.Tensor): BBox regression loss weights of each
+                anchor with shape (N, num_total_anchors, 4).
+            num_total_samples (int): If sampling, num total samples equal to
+                the number of total anchors; Otherwise, it is the number of
+                positive anchors.
 
-        返回:
-            元组 (torch.Tensor):
+        Returns:
+            tuple (torch.Tensor):
 
-            - loss_cls (torch.Tensor): 每个尺度级别的分类损失。
-            - loss_bbox (torch.Tensor): 每个尺度级别的回归损失。
+                - loss_cls (torch.Tensor): cls. loss for each scale level.
+                - loss_bbox (torch.Tensor): reg. loss for each scale level.
         """
         # classification loss
         labels = labels.reshape(-1)
@@ -205,23 +203,21 @@ class ADRconvLossOrientedRPNHead(RotatedRPNHead):
         bbox_targets = bbox_targets.reshape(-1, 6)
         bbox_weights = bbox_weights.reshape(-1, 6)
         bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 6)
-
+        
+        # decode bbox_pred with anchors
         """
         这里的decode函数将六个参数解码为xywha,解码的函数为delta2bbox,
         其最后进行了poly2obb,且格式为le90的转换,因此会使得xy变为x_ctr, y_ctr从而产生负数值-
         这是因为其设定了原点为中心导致的。
         """
         # self.reg_decoded_bbox = True
-        ######
         if self.reg_decoded_bbox:
-
             # When the regression loss (e.g. `IouLoss`, `GIouLoss`)
             # is applied directly on the decoded bounding boxes, it
             # decodes the already encoded coordinates to absolute format.
             anchors = anchors.reshape(-1, 4)
-            decode_bbox_pred = self.bbox_coder.decode(anchors, bbox_pred)###在这里转换得到cx,cy,w,h,a,
+            decode_bbox_pred = self.bbox_coder.decode(anchors, bbox_pred)###在这里转换得到xywha,
             # print('decode_bbox_pred:',decode_bbox_pred)
-
         
         ###############add aspect ratio loss################
         anchors_ = anchors.reshape(-1, 4)
@@ -233,16 +229,18 @@ class ADRconvLossOrientedRPNHead(RotatedRPNHead):
         pred_aspect_ratio = pred_aspect_ratio.unsqueeze(1)
         expanded_pred_aspect_ratio = pred_aspect_ratio.repeat(1, 6)
 
-
         expanded_pred_aspect_ratio = 2.0 * expanded_pred_aspect_ratio / (expanded_pred_aspect_ratio + 1.0)
-        # bbox_weights = expanded_pred_aspect_ratio
+
+        bbox_weights = expanded_pred_aspect_ratio * bbox_weights
+        # print("bbox_weights:",bbox_weights)
         loss_bbox = self.loss_bbox(
             bbox_pred,
             bbox_targets,
             bbox_weights,
             avg_factor=num_total_samples)
+        # print(loss_bbox.shape)
+        # loss_bbox = loss_bbox 
         
-        loss_bbox = loss_bbox 
         return loss_cls, loss_bbox
 
     
