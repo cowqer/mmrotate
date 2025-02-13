@@ -101,6 +101,7 @@ class SpatialAttention(nn.Module):
         x = torch.cat([avg_out, max_out], dim=1)
         x = self.conv1(x)
         return self.sigmoid(x)
+    
 class RountingFunctionPro(nn.Module):
 ### 2.10：只添加了maxpool
     def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0, reduction=32):
@@ -241,6 +242,78 @@ class RountingFunction1(nn.Module):
         max_x = self.max_pool(x).squeeze(dim=-1).squeeze(dim=-1)
         
         x = torch.cat([avg_x, max_x], dim=-1)  # 形状变为 [batch_size, 2 * in_channels]
+        
+        alphas = self.dropout1(x)
+        alphas = self.fc_alpha(alphas)
+        alphas = torch.sigmoid(alphas)
+
+        angles = self.dropout2(x)
+        angles = self.fc_theta(angles)
+        angles = self.act_func(angles)
+        angles = angles * self.proportion
+
+        return alphas, angles
+
+    def extra_repr(self):
+        s = (f'kernel_number={self.kernel_number}')
+        return s.format(**self.__dict__)
+    
+class RountingFunction2(nn.Module):
+### 2.10：添加了maxpool 和 STN
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0, reduction=32):
+        """
+        Initialize the RountingFunctionPro module.
+
+        Args:
+            in_channels (int): Number of input channels.
+            kernel_number (int): Number of kernels.
+            dropout_rate (float, optional): Dropout rate. Default is 0.2.
+            proportion (float, optional): Proportion parameter. Default is 40.0.
+            reduction (int, optional): Reduction factor for channels. Default is 32.
+        """
+        super(RountingFunction2).__init__()
+        self.kernel_number = kernel_number
+
+        # Depthwise convolution with kernel size 3x3
+        self.dwc = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1,
+                             groups=in_channels, bias=False)
+        self.sa = SpatialAttention()
+        # Layer normalization
+        self.norm = LayerNormProxy(in_channels)
+        
+        # ReLU activation
+        self.relu = nn.ReLU(inplace=True)
+        
+        # Adaptive average pooling to 1x1
+        ############################################
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+        
+        # Dropout and fully connected layer for alpha
+        self.dropout1 = nn.Dropout(dropout_rate)
+        self.fc_alpha = nn.Linear(in_channels*2, kernel_number, bias=True)
+
+        # Dropout and fully connected layer for theta
+        self.dropout2= nn.Dropout(dropout_rate)
+        self.fc_theta = nn.Linear(in_channels*2, kernel_number, bias=False)
+
+        # Activation function
+        self.act_func = nn.Softsign()
+        
+        # Convert proportion to radians
+        self.proportion = proportion / 180.0 * math.pi
+        # Initialize weights with truncated normal distribution
+        # init weights
+        trunc_normal_(self.dwc.weight, std=.02)
+        trunc_normal_(self.fc_alpha.weight, std=.02)
+        trunc_normal_(self.fc_theta.weight, std=.02)
+
+    def forward(self, x):
+
+        x = self.dwc(x)
+        x = self.norm(x)
+        x = self.relu(x)
+        
+        x = self.avg_pool(x).squeeze(dim=-1).squeeze(dim=-1)
         
         alphas = self.dropout1(x)
         alphas = self.fc_alpha(alphas)

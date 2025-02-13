@@ -10,8 +10,8 @@ import torch.nn.functional as F
 from mmrotate.core import obb2xyxy
 from ..builder import ROTATED_HEADS
 from .rotated_rpn_head import RotatedRPNHead
-from ..utils import AdaptiveRotatedConv2d
-from ..utils import RountingFunction1
+from ..utils import AdaptiveRotatedConv2d1
+from ..utils import RountingFunction
 
 @ROTATED_HEADS.register_module()
 class ADRconvOrientedRPNHead1(RotatedRPNHead):
@@ -22,13 +22,13 @@ class ADRconvOrientedRPNHead1(RotatedRPNHead):
         self.kernel_number=1
         self.rpn_conv = nn.Conv2d(
             self.in_channels, self.feat_channels, 3, padding=1)
-        self.arconv = AdaptiveRotatedConv2d(
+        self.arconv = AdaptiveRotatedConv2d1(
                 in_channels=self.feat_channels,
                 out_channels=self.feat_channels,
                 kernel_size=3, 
                 padding=1,
                 groups=1,
-                rounting_func=RountingFunction1(
+                rounting_func=RountingFunction(
                     in_channels=self.feat_channels,
                     kernel_number=self.kernel_number,
                 ),

@@ -7,7 +7,7 @@ angle_version = 'le90'
 model = dict(
     type='OrientedRCNN',
     backbone=dict(
-        type='GatedPResNet',
+        type='GatedSPResNet',
         depth=50,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
@@ -68,9 +68,7 @@ model = dict(
             reg_class_agnostic=True,
             loss_cls=dict(
                 type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
-            reg_decoded_bbox=True,
-            loss_bbox=dict(
-            type='FPDIoULoss',loss_weight=1.0))),
+            loss_bbox=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1.0))),
     train_cfg=dict(
         rpn=dict(
             assigner=dict(

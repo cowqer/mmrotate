@@ -10,7 +10,7 @@ from .oriented_rpn_head import OrientedRPNHead
 from .Pconv_oriented_rpn_head import PconvOrientedRPNHead
 from .AR_oriented_rpn_head import AR_OrientedRPNHead
 from .AR2_oriented_rpn_head import AR2_OrientedRPNHead
-from .ADR_oriented_rpn_head_1 import ADRconvOrientedRPNHead1
+from .ADR_oriented_rpn_head_1_testing import ADRconvOrientedRPNHead1
 from .AP_oriented_rpn_head import APconvOrientedRPNHead
 from .ADR_oriented_rpn_head import ADRconvOrientedRPNHead
 from .ADR_P_oriented_rpn_head import ADRPconvOrientedRPNHead

@@ -6,9 +6,9 @@ import torch
 import torch.nn as nn
 from mmcv.ops.diff_iou_rotated import box2corners,diff_iou_rotated_2d
 
-# from mmdet.structures.bbox import bbox_overlaps
+# from mmrotate.registry import MODELS
 
-from mmrotate.registry import MODELS
+from ..builder import ROTATED_LOSSES
 from mmdet.models.losses.utils import weighted_loss
 
 
@@ -74,7 +74,7 @@ def fpdiou_loss(pred, target, linear=False, mode='log', eps=1e-6) -> torch.Tenso
 
 
 
-@MODELS.register_module()
+@ROTATED_LOSSES.register_module()
 class FPDIoULoss(nn.Module):
 
     def __init__(self,

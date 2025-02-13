@@ -57,12 +57,6 @@ class GatedSPConv(nn.Module):
         self.cw = Conv(c1, c2 // 4, (1, k), s=s, p=0)
         self.ch = Conv(c1, c2 // 4, (k, 1), s=s, p=0)
         
-        # Gating mechanism (learns importance of each direction)
-        # self.gate_fc = nn.Sequential(
-        #     nn.AdaptiveAvgPool2d(1),    # Global pooling to extract feature map statistics
-        #     nn.Conv2d(c1, 4, kernel_size=1),  # Output 4 gate values
-        #     nn.Sigmoid()  # Normalize between 0 and 1
-        # )
         self.gate_fc = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(c1, c2 // 4 * 4, kernel_size=1),  # 输出 [B, c2 // 4 * 4, 1, 1]
@@ -104,7 +98,7 @@ if __name__ == "__main__":
     x = torch.randn(1, 3, 64, 64)  # 1 image, 3 channels, 64x64 size
     
     # Create an instance of PConv
-    apconv = GatedPConv(c1=3, c2=128, k=3, s=1 )# output channels = 64
+    apconv = GatedSPConv(c1=3, c2=128, k=3, s=1 )# output channels = 64
     
     # Forward pass
     output = apconv(x)
