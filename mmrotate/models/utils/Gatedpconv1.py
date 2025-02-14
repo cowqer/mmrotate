@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from .weight_init import trunc_normal_
     
 def autopad(k, p=None, d=1):  # kernel, padding, dilation
     """Pad to 'same' shape outputs."""
@@ -44,7 +44,7 @@ class ChannelShuffle(nn.Module):
         x = x.view(b, c, h, w)
         return x
 
-class GatedPConv(nn.Module):
+class GatedSPConv(nn.Module):
     ''' Pinwheel-shaped Convolution with Gating Mechanism '''
     
     def __init__(self, c1, c2, k, s):
@@ -56,6 +56,10 @@ class GatedPConv(nn.Module):
         # Branch convolutions
         self.cw = Conv(c1, c2 // 4, (1, k), s=s, p=0)
         self.ch = Conv(c1, c2 // 4, (k, 1), s=s, p=0)
+        self.dwc = nn.Conv2d(c1, c1, kernel_size=3, padding=1,
+                             groups=c1, bias=False)
+        
+        # self.fc = nn.Linear(c1, k, bias=True)
         
         self.gate_fc = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
@@ -65,7 +69,12 @@ class GatedPConv(nn.Module):
 
         # Final fusion layer
         self.fusion = Conv(c2, c2, 2, s=1, p=0)
-
+        self.ChannelShuffle = ChannelShuffle(groups=4)
+        # self.dropout = nn.Dropout(0.2)
+        
+        trunc_normal_(self.dwc.weight, std=.02)
+        trunc_normal_(self.fc.weight, std=.02)
+        
     def forward(self, x):
         # Compute feature maps for each direction
         yw0 = self.cw(self.pad[0](x))  # Horizontal-1
@@ -74,6 +83,7 @@ class GatedPConv(nn.Module):
         yh1 = self.ch(self.pad[3](x))  # Vertical-2
         # print(yw0.shape, yw1.shape, yh0.shape, yh1.shape)
         # Compute gate weights
+        x = self.dwc(x)
         gate = self.gate_fc(x)  # Shape: [B, 4, 1, 1]
         gate = gate.view(gate.shape[0], 4, self.c2 // 4, 1, 1)  # Reshape for broadcasting
         # print(gate.shape)
@@ -85,8 +95,9 @@ class GatedPConv(nn.Module):
         # print(yw0.shape, yw1.shape, yh0.shape, yh1.shape)
         # Weighted sum instead of simple concatenation
         fused = torch.cat([yw0, yw1, yh0, yh1], dim=1)
-        # print(fused.shape)
+
         output = self.fusion(fused)
+        
         # print(output.shape)
         return output
 
@@ -95,7 +106,7 @@ if __name__ == "__main__":
     x = torch.randn(1, 3, 64, 64)  # 1 image, 3 channels, 64x64 size
     
     # Create an instance of PConv
-    apconv = GatedPConv(c1=3, c2=128, k=3, s=1 )# output channels = 64
+    apconv = GatedSPConv(c1=3, c2=128, k=3, s=1 )# output channels = 64
     
     # Forward pass
     output = apconv(x)

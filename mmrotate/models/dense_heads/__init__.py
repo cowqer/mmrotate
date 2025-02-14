@@ -11,6 +11,7 @@ from .Pconv_oriented_rpn_head import PconvOrientedRPNHead
 from .AR_oriented_rpn_head import AR_OrientedRPNHead
 from .AR2_oriented_rpn_head import AR2_OrientedRPNHead
 from .ADR_oriented_rpn_head_1_testing import ADRconvOrientedRPNHead1
+from .ADR_oriented_rpn_head_xy import ADRconvOrientedRPNHeadxy
 from .AP_oriented_rpn_head import APconvOrientedRPNHead
 from .ADR_oriented_rpn_head import ADRconvOrientedRPNHead
 from .ADR_P_oriented_rpn_head import ADRPconvOrientedRPNHead
@@ -35,5 +36,5 @@ __all__ = [
     'CSLRFCOSHead', 'OrientedRepPointsHead','AR_OrientedRPNHead',
     'AR2_OrientedRPNHead','PconvOrientedRPNHead','ADRconvOrientedRPNHead',
     'APconvOrientedRPNHead','ADRPconvOrientedRPNHead','ADRconvLossOrientedRPNHead',
-    'ADRconvLossOrientedRPNHead2','ADRconvOrientedRPNHead1'
+    'ADRconvLossOrientedRPNHead2','ADRconvOrientedRPNHead1','ADRconvOrientedRPNHeadxy'
 ]
