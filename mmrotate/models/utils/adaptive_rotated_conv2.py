@@ -21,7 +21,7 @@ class SpatialAttention(nn.Module):
         x = self.conv1(x)
         return self.sigmoid(x)
 
-class AdaptiveRotatedConv2d1(AdaptiveRotatedConv2d):
+class AdaptiveRotatedConv2d2(AdaptiveRotatedConv2d):
     def __init__(self, in_channels, out_channels, kernel_size,
                  stride=1, padding=1, dilation=1, groups=1, bias=False,
                  kernel_number=1, rounting_func=None, rotate_func=batch_rotate_multiweight):
@@ -32,24 +32,27 @@ class AdaptiveRotatedConv2d1(AdaptiveRotatedConv2d):
         # 添加新的属性或方法
         self.gatedpc = GatedPConv(out_channels, out_channels, k=self.kernel_size, s=1)
         self.stn = SpatialAttention(7)
-        nn.init.kaiming_normal_(self.additional_layer.weight, mode='fan_out', nonlinearity='relu')
+
 
     def forward(self, x):
         # 调用父类的 forward 方法
-        out1 = self.gatedpc(x)
-        
         out2 = super().forward(x)
         
-        out3 = self.stn(x) 
+        out1 = self.stn(x) 
         
-        out = out1 + out2
-        
-        out = out * out3
+        out = out2 * out1
           
         return out
 
     def extra_repr(self):
-        s = super().extra_repr()
-        s += ', additional_layer=True'
-        return s
+        s = ('{in_channels}, {out_channels}, kernel_number={kernel_number}'
+             ', kernel_size={kernel_size}, stride={stride}, bias={bias}')
+             
+        if self.padding != (0,) * len([self.padding]):
+            s += ', padding={padding}'
+        if self.dilation != (1,) * len([self.dilation]):
+            s += ', dilation={dilation}'
+        if self.groups != 1:
+            s += ', groups={groups}'
+        return s.format(**self.__dict__)
 

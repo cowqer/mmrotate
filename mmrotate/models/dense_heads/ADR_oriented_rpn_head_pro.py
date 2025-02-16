@@ -10,11 +10,11 @@ import torch.nn.functional as F
 from mmrotate.core import obb2xyxy
 from ..builder import ROTATED_HEADS
 from .rotated_rpn_head import RotatedRPNHead
-from ..utils import AdaptiveRotatedConv2d2
-from ..utils import RountingFunction
+from ..utils import AdaptiveRotatedConv2d
+from ..utils import RountingFunction,Gatedpconv
 
 @ROTATED_HEADS.register_module()
-class ADRSTNOrientedRPNHead(RotatedRPNHead):
+class ADRPOrientedRPNHead(RotatedRPNHead):
     """Oriented RPN head for Oriented R-CNN."""
 
     def _init_layers(self):
@@ -22,7 +22,11 @@ class ADRSTNOrientedRPNHead(RotatedRPNHead):
         self.kernel_number=1
         self.rpn_conv = nn.Conv2d(
             self.in_channels, self.feat_channels, 3, padding=1)
-        self.arconv = AdaptiveRotatedConv2d2(
+        self.gatedponv = Gatedpconv.GatedPConv(
+            self.feat_channels, self.feat_channels, 3, 1
+        )
+        
+        self.arconv = AdaptiveRotatedConv2d(
                 in_channels=self.feat_channels,
                 out_channels=self.feat_channels,
                 kernel_size=3, 
@@ -34,17 +38,18 @@ class ADRSTNOrientedRPNHead(RotatedRPNHead):
                 ),
                 kernel_number=self.kernel_number,
             )
-
+        self.alpha = nn.Parameter(torch.tensor(0.9))
         
         self.rpn_cls = nn.Conv2d(self.feat_channels,
                                  self.num_anchors * self.cls_out_channels, 1)
         self.rpn_reg = nn.Conv2d(self.feat_channels, self.num_anchors * 6, 1)
         
-        
     def forward_single(self, x):
         """Forward feature map of a single scale level."""
         x = self.rpn_conv(x)
-        x = self.arconv(x)
+        x1 = self.arconv(x)
+        x2 = self.gatedponv(x)
+        x = self.alpha * x1 + (1 - self.alpha) * x2
         # x = torch.cat([x, self.arconv(x)], dim=1)
         x = F.relu(x, inplace=True)
         rpn_cls_score = self.rpn_cls(x)

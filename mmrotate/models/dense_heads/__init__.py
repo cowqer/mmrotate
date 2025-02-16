@@ -26,7 +26,9 @@ from .rotated_retina_head import RotatedRetinaHead
 from .rotated_retina_refine_head import RotatedRetinaRefineHead
 from .rotated_rpn_head import RotatedRPNHead
 from .sam_reppoints_head import SAMRepPointsHead
-
+from .ADR_stn_oriented_rpn_head import ADRSTNOrientedRPNHead
+from .ADR_oriented_rpn_head_pro import ADRPOrientedRPNHead
+from .SADR_oriented_rpn_head import SADRPOrientedRPNHead
 __all__ = [
     'RotatedAnchorHead', 'RotatedRetinaHead', 'RotatedRPNHead',
     'OrientedRPNHead', 'RotatedRetinaRefineHead', 'ODMRefineHead',
@@ -36,5 +38,6 @@ __all__ = [
     'CSLRFCOSHead', 'OrientedRepPointsHead','AR_OrientedRPNHead',
     'AR2_OrientedRPNHead','PconvOrientedRPNHead','ADRconvOrientedRPNHead',
     'APconvOrientedRPNHead','ADRPconvOrientedRPNHead','ADRconvLossOrientedRPNHead',
-    'ADRconvLossOrientedRPNHead2','ADRconvOrientedRPNHead1','ADRconvOrientedRPNHeadxy'
+    'ADRconvLossOrientedRPNHead2','ADRconvOrientedRPNHead1','ADRconvOrientedRPNHeadxy',
+    'ADRSTNOrientedRPNHead','ADRPOrientedRPNHead','SADRPOrientedRPNHead'
 ]
