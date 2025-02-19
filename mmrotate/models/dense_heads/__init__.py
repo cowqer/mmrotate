@@ -29,6 +29,15 @@ from .sam_reppoints_head import SAMRepPointsHead
 from .ADR_stn_oriented_rpn_head import ADRSTNOrientedRPNHead
 from .ADR_oriented_rpn_head_pro import ADRPOrientedRPNHead
 from .SADR_oriented_rpn_head import SADRPOrientedRPNHead
+from .ADR_ms_oriented_rpn_head_pro import MSADRPOrientedRPNHead
+from .GADR_oriented_rpn_head_pro import ADRPGOrientedRPNHead
+from .A_stn_DR_oriented_rpn_head_pro import STN_ADRPOrientedRPNHead
+from .A_group_DR_oriented_rpn_head_pro import Group_ADRPOrientedRPNHead
+from .A_chunk_DR_oriented_rpn_head_pro import Chunk_ADRPOrientedRPNHead
+from .A_max_DR_oriented_rpn_head_pro import Max_ADRPOrientedRPNHead
+from .GADR_oriented_rpn_head_pro_mlp import MLP_ADRPGOrientedRPNHead
+from .A_tran_DR_oriented_rpn_head_pro import TRANS_ADRPOrientedRPNHead
+from .A_SCSA_DR_oriented_rpn_head_pro import SCSA_ADRPOrientedRPNHead
 __all__ = [
     'RotatedAnchorHead', 'RotatedRetinaHead', 'RotatedRPNHead',
     'OrientedRPNHead', 'RotatedRetinaRefineHead', 'ODMRefineHead',
@@ -39,5 +48,8 @@ __all__ = [
     'AR2_OrientedRPNHead','PconvOrientedRPNHead','ADRconvOrientedRPNHead',
     'APconvOrientedRPNHead','ADRPconvOrientedRPNHead','ADRconvLossOrientedRPNHead',
     'ADRconvLossOrientedRPNHead2','ADRconvOrientedRPNHead1','ADRconvOrientedRPNHeadxy',
-    'ADRSTNOrientedRPNHead','ADRPOrientedRPNHead','SADRPOrientedRPNHead'
+    'ADRSTNOrientedRPNHead','ADRPOrientedRPNHead','SADRPOrientedRPNHead',
+    'MSADRPOrientedRPNHead','ADRPGOrientedRPNHead','STN_ADRPOrientedRPNHead',
+    'Group_ADRPOrientedRPNHead','Chunk_ADRPOrientedRPNHead','Max_ADRPOrientedRPNHead',
+    'MLP_ADRPGOrientedRPNHead','TRANS_ADRPOrientedRPNHead','SCSA_ADRPOrientedRPNHead'
 ]

@@ -11,12 +11,12 @@ from mmrotate.core import obb2xyxy
 from ..builder import ROTATED_HEADS
 from .rotated_rpn_head import RotatedRPNHead
 from ..utils import AdaptiveRotatedConv2d
-from ..utils import RountingFunction,Gatedpconv
+from ..utils import MSRountingFunction,Gatedpconv
+from ..utils import AdaptiveAlphaLayer
 
 @ROTATED_HEADS.register_module()
-class ADRPOrientedRPNHead(RotatedRPNHead):
+class MSADRPOrientedRPNHead(RotatedRPNHead):
     """Oriented RPN head for Oriented R-CNN."""
-
     def _init_layers(self):
         """Initialize layers of the head."""
         self.kernel_number=1
@@ -25,20 +25,20 @@ class ADRPOrientedRPNHead(RotatedRPNHead):
         self.gatedponv = Gatedpconv.GatedPConv(
             self.feat_channels, self.feat_channels, 3, 1
         )
-        
+        self.ASFM=AdaptiveAlphaLayer(self.feat_channels)
         self.arconv = AdaptiveRotatedConv2d(
                 in_channels=self.feat_channels,
                 out_channels=self.feat_channels,
                 kernel_size=3, 
                 padding=1,
                 groups=1,
-                rounting_func=RountingFunction(
+                rounting_func=MSRountingFunction(
                     in_channels=self.feat_channels,
                     kernel_number=self.kernel_number,
                 ),
                 kernel_number=self.kernel_number,
             )
-        self.alpha = nn.Parameter(torch.tensor(0.05))
+        self.alpha = nn.Parameter(torch.tensor(0.9))
         
         self.rpn_cls = nn.Conv2d(self.feat_channels,
                                  self.num_anchors * self.cls_out_channels, 1)
@@ -49,6 +49,7 @@ class ADRPOrientedRPNHead(RotatedRPNHead):
         x = self.rpn_conv(x)
         x1 = self.arconv(x)
         x2 = self.gatedponv(x)
+        self.alpha = self.ASFM(x)
         x = self.alpha * x1 + (1 - self.alpha) * x2
         # x = torch.cat([x, self.arconv(x)], dim=1)
         x = F.relu(x, inplace=True)

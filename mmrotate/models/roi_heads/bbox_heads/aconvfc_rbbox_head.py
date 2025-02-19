@@ -8,7 +8,7 @@ from mmdet.models.utils import build_linear_layer
 
 from ...builder import ROTATED_HEADS
 from .rotated_bbox_head import RotatedBBoxHead
-from ...utils import AdaptiveRotatedConv2d,RountingFunction
+from ...utils import AdaptiveRotatedConv2d, RountingFunction, GatedHWConv
 
 @ROTATED_HEADS.register_module()
 class RotatedAConvFCBBoxHead(RotatedBBoxHead):
@@ -69,7 +69,6 @@ class RotatedAConvFCBBoxHead(RotatedBBoxHead):
         self.fc_out_channels = fc_out_channels
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
-        # self.aconv = AdaptiveRotatedConv2d()
         
         # add shared convs and fcs
         self.shared_convs, self.shared_fcs, last_layer_dim = \
@@ -149,21 +148,6 @@ class RotatedAConvFCBBoxHead(RotatedBBoxHead):
                         padding=1,
                         conv_cfg=self.conv_cfg,
                         norm_cfg=self.norm_cfg))
-                branch_convs.append(
-                    AdaptiveRotatedConv2d(
-                        in_channels=self.conv_out_channels,
-                        out_channels=self.conv_out_channels,
-                        kernel_size=3,
-                        stride=self.conv2_stride,
-                        padding=1,
-                        groups=1,
-                        dilation=1,
-                        rounting_func=RountingFunction(
-                        in_channels=self.conv_out_channels,
-                        kernel_number=1,
-                ),
-                        kernel_number=1,
-            ))
             last_layer_dim = self.conv_out_channels
         # add branch specific fc layers
         branch_fcs = nn.ModuleList()
@@ -183,15 +167,16 @@ class RotatedAConvFCBBoxHead(RotatedBBoxHead):
 
     def forward(self, x):
         """Forward function."""
+        #x.shape: [batch_size, channels, height, width]
         if self.num_shared_convs > 0:
             for conv in self.shared_convs:
-                x = conv(x)
-
+                x = conv(x)## 经过每个 shared_conv 后，x 的形状保持不变: [batch_size, 256, 7, 7]
+                            # 因为卷积的 padding=1 和 stride=1，保持空间维度不变
         if self.num_shared_fcs > 0:
             if self.with_avg_pool:
-                x = self.avg_pool(x)
-
-            x = x.flatten(1)
+                x = self.avg_pool(x)# 经过 avg_pool 后，x 的形状变为: [batch_size, 256, 1, 1]
+                
+            x = x.flatten(1) # 经过 flatten 后，x 的形状变为: [batch_size, 256 * 1 * 1] = [batch_size, 256]
 
             for fc in self.shared_fcs:
                 x = self.relu(fc(x))
@@ -237,6 +222,51 @@ class ARotatedShared2FCBBoxHead(RotatedAConvFCBBoxHead):
             fc_out_channels=fc_out_channels,
             *args,
             **kwargs)
+        # 添加长宽比特征增强模块
+        self.aspect_ratio_enhancement = GatedHWConv(self.in_channels, self.in_channels, 3, 1)
+
+    def forward(self, x):
+        """Forward function."""
+        if self.num_shared_convs > 0:
+            for conv in self.shared_convs:
+                x = conv(x)
+
+        if self.num_shared_fcs > 0:
+            x = self.aspect_ratio_enhancement(x)
+            if self.with_avg_pool:
+                x = self.avg_pool(x)
+
+            x = x.flatten(1)
+
+            for fc in self.shared_fcs:
+                x = self.relu(fc(x))
+
+        # separate branches
+        x_cls = x
+        x_reg = x
+
+
+        for conv in self.cls_convs:
+            x_cls = conv(x_cls)
+        if x_cls.dim() > 2:
+            if self.with_avg_pool:
+                x_cls = self.avg_pool(x_cls)
+            x_cls = x_cls.flatten(1)
+        for fc in self.cls_fcs:
+            x_cls = self.relu(fc(x_cls))
+
+        for conv in self.reg_convs:
+            x_reg = conv(x_reg)
+        if x_reg.dim() > 2:
+            if self.with_avg_pool:
+                x_reg = self.avg_pool(x_reg)
+            x_reg = x_reg.flatten(1)
+        for fc in self.reg_fcs:
+            x_reg = self.relu(fc(x_reg))
+
+        cls_score = self.fc_cls(x_cls) if self.with_cls else None
+        bbox_pred = self.fc_reg(x_reg) if self.with_reg else None
+        return cls_score, bbox_pred
 
 
 @ROTATED_HEADS.register_module()

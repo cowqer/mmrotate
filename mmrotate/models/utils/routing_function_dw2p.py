@@ -65,11 +65,8 @@ class RountingFunctiondw2p(nn.Module):
  
 
     def forward(self, x):
-
-        x = self.pc(x)
-        y = self.dwc(x)
-        x = x + y
         
+        x = self.dwc(x)
         x = self.norm(x)
         x = self.relu(x)
         
