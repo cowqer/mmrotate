@@ -11,10 +11,10 @@ from mmrotate.core import obb2xyxy
 from ..builder import ROTATED_HEADS
 from .rotated_rpn_head import RotatedRPNHead
 from ..utils import AdaptiveRotatedConv2d
-from ..utils import RountingFunction,Gatedpconv
-from ..utils import AFSM
+from ..utils import RountingFunction1,Gatedpconv
+
 @ROTATED_HEADS.register_module()
-class ADRPGOrientedRPNHead(RotatedRPNHead):
+class ADR1POrientedRPNHead(RotatedRPNHead):
     """Oriented RPN head for Oriented R-CNN."""
 
     def _init_layers(self):
@@ -25,21 +25,20 @@ class ADRPGOrientedRPNHead(RotatedRPNHead):
         self.gatedponv = Gatedpconv.GatedPConv(
             self.feat_channels, self.feat_channels, 3, 1
         )
-        self.ASFMLayer = AFSM.AdaptiveAlphaLayer(self.feat_channels)
+        
         self.arconv = AdaptiveRotatedConv2d(
                 in_channels=self.feat_channels,
                 out_channels=self.feat_channels,
                 kernel_size=3, 
                 padding=1,
                 groups=1,
-                rounting_func=RountingFunction(
+                rounting_func=RountingFunction1(
                     in_channels=self.feat_channels,
                     kernel_number=self.kernel_number,
                 ),
                 kernel_number=self.kernel_number,
             )
-        self.alpha = nn.Parameter(torch.tensor(0.8))
-        
+        self.alpha = nn.Parameter(torch.tensor(0.1))
         
         self.rpn_cls = nn.Conv2d(self.feat_channels,
                                  self.num_anchors * self.cls_out_channels, 1)
@@ -50,11 +49,8 @@ class ADRPGOrientedRPNHead(RotatedRPNHead):
         x = self.rpn_conv(x)
         x1 = self.arconv(x)
         x2 = self.gatedponv(x)
-        
-        alpha_map = self.ASFMLayer(x)
-        x = alpha_map * x1 + (1.0 - alpha_map) * x2
-        
-        
+        x = self.alpha * x1 + (1 - self.alpha) * x2
+        # x = torch.cat([x, self.arconv(x)], dim=1)
         x = F.relu(x, inplace=True)
         rpn_cls_score = self.rpn_cls(x)
         rpn_bbox_pred = self.rpn_reg(x)

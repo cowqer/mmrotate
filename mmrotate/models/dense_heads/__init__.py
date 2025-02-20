@@ -12,7 +12,7 @@ from .AR_oriented_rpn_head import AR_OrientedRPNHead
 from .AR2_oriented_rpn_head import AR2_OrientedRPNHead
 from .ADR_oriented_rpn_head_1_testing import ADRconvOrientedRPNHead1
 from .ADR_oriented_rpn_head_xy import ADRconvOrientedRPNHeadxy
-from .AP_oriented_rpn_head import APconvOrientedRPNHead
+# from .AP_oriented_rpn_head import APconvOrientedRPNHead
 from .ADR_oriented_rpn_head import ADRconvOrientedRPNHead
 from .ADR_P_oriented_rpn_head import ADRPconvOrientedRPNHead
 from .ADR_loss_oriented_rpn_head import ADRconvLossOrientedRPNHead
@@ -38,6 +38,9 @@ from .A_max_DR_oriented_rpn_head_pro import Max_ADRPOrientedRPNHead
 from .GADR_oriented_rpn_head_pro_mlp import MLP_ADRPGOrientedRPNHead
 from .A_tran_DR_oriented_rpn_head_pro import TRANS_ADRPOrientedRPNHead
 from .A_SCSA_DR_oriented_rpn_head_pro import SCSA_ADRPOrientedRPNHead
+from .A_promax_DR_oriented_rpn_head_pro import Promax_ADRPOrientedRPNHead
+from .ADR1_oriented_rpn_head_pro import ADR1POrientedRPNHead
+from .ADR2_oriented_rpn_head_pro import ADR2POrientedRPNHead
 __all__ = [
     'RotatedAnchorHead', 'RotatedRetinaHead', 'RotatedRPNHead',
     'OrientedRPNHead', 'RotatedRetinaRefineHead', 'ODMRefineHead',
@@ -46,10 +49,11 @@ __all__ = [
     'RotatedATSSHead', 'RotatedAnchorFreeHead', 'RotatedFCOSHead',
     'CSLRFCOSHead', 'OrientedRepPointsHead','AR_OrientedRPNHead',
     'AR2_OrientedRPNHead','PconvOrientedRPNHead','ADRconvOrientedRPNHead',
-    'APconvOrientedRPNHead','ADRPconvOrientedRPNHead','ADRconvLossOrientedRPNHead',
+    'ADRPconvOrientedRPNHead','ADRconvLossOrientedRPNHead',
     'ADRconvLossOrientedRPNHead2','ADRconvOrientedRPNHead1','ADRconvOrientedRPNHeadxy',
     'ADRSTNOrientedRPNHead','ADRPOrientedRPNHead','SADRPOrientedRPNHead',
     'MSADRPOrientedRPNHead','ADRPGOrientedRPNHead','STN_ADRPOrientedRPNHead',
     'Group_ADRPOrientedRPNHead','Chunk_ADRPOrientedRPNHead','Max_ADRPOrientedRPNHead',
-    'MLP_ADRPGOrientedRPNHead','TRANS_ADRPOrientedRPNHead','SCSA_ADRPOrientedRPNHead'
+    'MLP_ADRPGOrientedRPNHead','TRANS_ADRPOrientedRPNHead','SCSA_ADRPOrientedRPNHead',
+    'Promax_ADRPOrientedRPNHead','ADR1POrientedRPNHead','ADR2POrientedRPNHead'
 ]

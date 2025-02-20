@@ -10,7 +10,7 @@ from .routing_function import (RountingFunction , RountingFunction_AMpool,
                                RountingFunction_stn, RountingFunction_stn_group
                                ,RountingFunction_stn_group_chunk,
                                RountingFunction_promax,RoutingFunction_Transformer)
-from .routing_functionpro import RountingFunctionPro
+from .routing_function1 import (RountingFunction1,RountingFunction2)
 from .apconv import APConv
 from .AFSM import AdaptiveAlphaLayer
 from .routing_function_dw2p import RountingFunctiondw2p
@@ -26,11 +26,12 @@ __all__ = [
     'ennMaxPool', 'ennInterpolate', 'build_enn_divide_feature',
     'build_enn_feature', 'build_enn_norm_layer', 'build_enn_trivial_feature',
     'ennTrivialConv','AdaptiveRotatedConv2d', 'RountingFunction','PConv',
-    'RountingFunctionPro','APConv','RountingFunctiondw2p','RountingFunction_AMpool',
+    'APConv','RountingFunctiondw2p','RountingFunction_AMpool',
     'AdaptiveRotatedConv2d1','AdaptiveRotatedConv2d2','SAdaptiveRotatedConv2d',
     'MultiScaleRotatedConv2d','MSRountingFunction','AdaptiveAlphaLayer','GatedHWConv',
     'RountingFunction_stn','RountingFunction_stn_group','RountingFunction_stn_group_chunk',
-    'RountingFunction_promax','RoutingFunction_Transformer','RountingFunction_SCSA'
+    'RountingFunction_promax','RoutingFunction_Transformer','RountingFunction_SCSA',
+    'RountingFunction1','RountingFunction2'
     
 ]
 

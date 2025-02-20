@@ -2,18 +2,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-### Adaptive feature selection module
-
 class AdaptiveAlphaLayer(nn.Module):
+    """Adaptive Alpha Layer to generate a weight map for feature fusion."""
+
     def __init__(self, in_channels):
         super(AdaptiveAlphaLayer, self).__init__()
-        # 设计一个小的网络来生成 alpha
-        self.fc1 = nn.Linear(in_channels, 256)
-        self.fc2 = nn.Linear(256, 1)  # 输出一个标量 alpha
-        
+        # Define a convolutional layer to produce a per-pixel weight map for each sample
+        self.conv = nn.Conv2d(in_channels, 1, kernel_size=1, stride=1)
+
     def forward(self, x):
-        # 通过一个小的网络来生成 alpha
-        x = x.mean(dim=[2, 3])  # 对空间维度进行池化，得到每个通道的全局信息
-        x = F.relu(self.fc1(x))
-        alpha = torch.sigmoid(self.fc2(x))  # 输出在 [0, 1] 之间的值
-        return alpha
+        """Generate adaptive alpha map for each input feature map."""
+        # Calculate alpha for each spatial location and each batch sample
+        alpha_map = self.conv(x)  # output shape: [batch_size, 1, height, width]
+        alpha_map = torch.sigmoid(alpha_map)  # To keep alpha in the range [0, 1]
+        return alpha_map
