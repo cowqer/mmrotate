@@ -206,13 +206,12 @@ class RountingFunction1(nn.Module):
         x = self.dwc3(x)
         x = self.norm(x)
         x = self.relu(x)
-        # print("x.shape after norm and relu:", x.shape)
+
         x = self.avg_pool(x)  # avg_x.shape = [batch_size, Cin]
         x = self.fc_shared(x).squeeze(dim=-1).squeeze(dim=-1)
-        # print("x.shape after avg_pool:", x.shape)
+
         alphas, angles = torch.chunk(x, 2, dim=1)
-        # print("alphas.shape:", alphas.shape)
-        # print("angles.shape:", angles.shape)
+ 
             
         alphas = torch.sigmoid(alphas)
         angles = self.act_func(angles)
@@ -293,6 +292,58 @@ class RountingFunction2(nn.Module):
         s = (f'kernel_number={self.kernel_number}')
         return s.format(**self.__dict__)
     
+    
+class RountingFunction3(nn.Module):
+
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+        super().__init__()
+        self.kernel_number = kernel_number
+        self.dwc = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1,
+                             groups=in_channels, bias=False)
+        self.norm = LayerNormProxy(in_channels)
+        self.relu = nn.ReLU(inplace=True)
+
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+
+        self.dropout1 = nn.Dropout(dropout_rate)
+        self.fc_alpha = nn.Linear(in_channels, in_channels, bias=True)
+
+        self.dropout2 = nn.Dropout(dropout_rate)
+        self.fc_theta = nn.Linear(in_channels, kernel_number, bias=False)
+
+        self.act_func = nn.Softsign()
+        self.proportion = proportion / 180.0 * math.pi
+        
+        # init weights
+        trunc_normal_(self.dwc.weight, std=.02)
+        trunc_normal_(self.fc_alpha.weight, std=.02)
+        trunc_normal_(self.fc_theta.weight, std=.02)
+
+    def forward(self, x):
+
+        x = self.dwc(x)
+        x = self.norm(x)
+        x = self.relu(x)
+
+        x = self.avg_pool(x).squeeze(dim=-1).squeeze(dim=-1)  # avg_x.shape = [batch_size, Cin]
+
+        x = self.dropout1(x)
+        x = self.fc_alpha(x)
+        
+        x = self.dropout2(x)
+        x = self.fc_theta(x)
+    
+        alphas = torch.sigmoid(x)
+
+        angles = self.act_func(x)
+        angles = angles * self.proportion
+
+        return alphas, angles
+
+    def extra_repr(self):
+        s = (f'kernel_number={self.kernel_number}')
+        return s.format(**self.__dict__)
+
 if __name__ == "__main__":
     # Set random seed for reproducibility
     torch.manual_seed(0)
@@ -307,7 +358,7 @@ if __name__ == "__main__":
     x = torch.randn(batch_size, in_channels, height, width)
 
     # Instantiate the model
-    model = RountingFunction2(in_channels=in_channels, kernel_number=kernel_number)
+    model = RountingFunction3(in_channels=in_channels, kernel_number=kernel_number)
 
     # Forward pass
     alphas, angles = model(x)
