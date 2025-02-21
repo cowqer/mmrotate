@@ -21,6 +21,7 @@ from .adaptive_rotated_msconv import MultiScaleRotatedConv2d
 from .ms_routing_function import MSRountingFunction
 from .Gatedhwconv import GatedHWConv
 from .routing_function_SCSA import RountingFunction_SCSA
+from .PM import MRountingFunction
 __all__ = [
     'ORConv2d', 'RotationInvariantPooling', 'ennConv', 'ennReLU', 'ennAvgPool',
     'ennMaxPool', 'ennInterpolate', 'build_enn_divide_feature',
@@ -31,7 +32,7 @@ __all__ = [
     'MultiScaleRotatedConv2d','MSRountingFunction','AdaptiveAlphaLayer','GatedHWConv',
     'RountingFunction_stn','RountingFunction_stn_group','RountingFunction_stn_group_chunk',
     'RountingFunction_promax','RoutingFunction_Transformer','RountingFunction_SCSA',
-    'RountingFunction1','RountingFunction2'
+    'RountingFunction1','RountingFunction2','MRountingFunction'
     
 ]
 
