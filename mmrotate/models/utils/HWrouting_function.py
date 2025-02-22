@@ -39,66 +39,95 @@ class DMSRB(nn.Module):
         kernel_size_1 = 3
         kernel_size_2 = 5
 
-        self.conv_3_1 = nn.Conv2d(channels_in, channels_in, kernel_size_1, groups=channels_in)
-        self.conv_3_2 = nn.Conv2d(channels_in * 2, channels_in * 2, kernel_size_1, groups=channels_in * 2)
-        self.conv_5_1 = nn.Conv2d(channels_in, channels_in, kernel_size_2, groups=channels_in)
-        self.conv_5_2 = nn.Conv2d(channels_in * 2, channels_in * 2, kernel_size_2, groups=channels_in * 2)
+        self.conv_3_1 = nn.Conv2d(channels_in, channels_in, kernel_size_1, groups=channels_in,padding=1)
+        self.conv_3_2 = nn.Conv2d(channels_in * 2, channels_in * 2, kernel_size_1, groups=channels_in * 2,padding=1)
+        self.conv_5_1 = nn.Conv2d(channels_in, channels_in, kernel_size_2, groups=channels_in,padding=2)
+        self.conv_5_2 = nn.Conv2d(channels_in * 2, channels_in * 2, kernel_size_2, groups=channels_in * 2,padding=2)
         self.confusion = nn.Conv2d(channels_in * 4, channels_out, 1, padding=0, stride=1)
         self.relu = nn.ReLU(inplace=True)
-        self.init_weights()
-        trunc_normal_(self.conv_3_1.dwc.weight, std=.02)
-        trunc_normal_(self.conv_3_2.dwc.weight, std=.02)
-        trunc_normal_(self.conv_5_1.dwc.weight, std=.02)
-        trunc_normal_(self.conv_5_2.dwc.weight, std=.02)
+        
+        trunc_normal_(self.conv_3_1.weight, std=.02)
+        trunc_normal_(self.conv_3_2.weight, std=.02)
+        trunc_normal_(self.conv_5_1.weight, std=.02)
+        trunc_normal_(self.conv_5_2.weight, std=.02)
+        
 
     def forward(self, x):
         input_1 = x
+
         output_3_1 = self.relu(self.conv_3_1(input_1))
         output_5_1 = self.relu(self.conv_5_1(input_1))
+
         input_2 = torch.cat([output_3_1, output_5_1], 1)
+        
         output_3_2 = self.relu(self.conv_3_2(input_2))
         output_5_2 = self.relu(self.conv_5_2(input_2))
+        
         input_3 = torch.cat([output_3_2, output_5_2], 1)
+        
         output = self.confusion(input_3)
         output = output + x
         return output
     
-class MRountingFunction(nn.Module):
+    
+class HWRoutingFunction(nn.Module):
 
-    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0, lambda_1 = 0.1, lambda_2 = 0.1):
         super().__init__()
         self.kernel_number = kernel_number
-        # self.dwc = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1,
-        #                      groups=in_channels, bias=False)
         
+        self.dwc = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1,
+                             groups=in_channels, bias=False)
         self.norm = LayerNormProxy(in_channels)
         self.relu = nn.ReLU(inplace=True)
-
+        
+        self.avg_pool_w = nn.AdaptiveAvgPool2d((1, None)) 
+        self.avg_pool_h = nn.AdaptiveAvgPool2d((None, 1)) 
         self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
         
+        self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size=(1, 5), padding=(0, 2))
+        self.conv2 = nn.Conv2d(in_channels, in_channels, kernel_size=(5, 1), padding=(2, 0))
+        
         self.dropout1 = nn.Dropout(dropout_rate)
-        self.fc_shared = nn.Conv2d(in_channels, kernel_number * 2, kernel_size=1, bias=True)
+        self.fc_alpha = nn.Linear(in_channels, kernel_number, bias=True)
+
+        self.dropout2 = nn.Dropout(dropout_rate)
+        self.fc_theta = nn.Linear(in_channels, kernel_number, bias=False)
 
         self.act_func = nn.Softsign()
         self.proportion = proportion / 180.0 * math.pi
-        self.Mdw = DMSRB(in_channels, in_channels)
-        self.init_weights()
-        # init weight  
-        trunc_normal_(self.fc_shared.weight, std=.02)
-        
+
+        self.lambda_1 = lambda_1
+        self.lambda_2 = lambda_2
+        # init weights
+        trunc_normal_(self.dwc.weight, std=.02)
+        trunc_normal_(self.fc_alpha.weight, std=.02)
+        trunc_normal_(self.fc_theta.weight, std=.02)
+
     def forward(self, x):
-        
-        x = self.Mdw(x)
+
+        x = self.dwc(x)
         x = self.norm(x)
         x = self.relu(x)
         
+        branch1 = self.avg_pool_w(x)  # (batch_size, C, 1, W)
+        branch1 = self.conv1(branch1)  # (batch_size, C, 1, W)
+        branch1 = branch1.expand(-1, -1, x.size(2), -1)  # 扩展回 (batch_size, C, H, W)
+
+        branch2 = self.adaptive_pool_h(x)  # (batch_size, C, H, 1)
+        branch2 = self.conv2(branch2)  # (batch_size, C, H, 1)
+        branch2 = branch2.expand(-1, -1, -1, x.size(3))  # 扩展回 (batch_size, C, H, W)
+        
+        x = self.lambda_1 * branch1 + self.lambda_2 * branch2 + x
+        
         x = self.avg_pool(x).squeeze(dim=-1).squeeze(dim=-1)  # avg_x.shape = [batch_size, Cin]
 
-        x = self.dropout1(x)
-        x = self.fc_shared(x).squeeze(dim=-1).squeeze(dim=-1)
-        
-        alphas, angles = torch.chunk(x, 2, dim=1)
+        alphas = self.dropout1(x)
+        alphas = self.fc_alpha(alphas)
         alphas = torch.sigmoid(alphas)
+
+        angles = self.dropout2(x)
+        angles = self.fc_theta(angles)
         angles = self.act_func(angles)
         angles = angles * self.proportion
 
@@ -107,6 +136,7 @@ class MRountingFunction(nn.Module):
     def extra_repr(self):
         s = (f'kernel_number={self.kernel_number}')
         return s.format(**self.__dict__)
+
 
 if __name__ == "__main__":
     # 创建一个 DMSRB 实例
