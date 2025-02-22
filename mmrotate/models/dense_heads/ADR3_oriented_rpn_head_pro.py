@@ -11,7 +11,7 @@ from mmrotate.core import obb2xyxy
 from ..builder import ROTATED_HEADS
 from .rotated_rpn_head import RotatedRPNHead
 from ..utils import AdaptiveRotatedConv2d
-from ..utils import RountingFunction2,Gatedpconv
+from ..utils import RountingFunction3,Gatedpconv
 
 @ROTATED_HEADS.register_module()
 class ADR3POrientedRPNHead(RotatedRPNHead):
@@ -32,7 +32,7 @@ class ADR3POrientedRPNHead(RotatedRPNHead):
                 kernel_size=3, 
                 padding=1,
                 groups=1,
-                rounting_func=RountingFunction2(
+                rounting_func=RountingFunction3(
                     in_channels=self.feat_channels,
                     kernel_number=self.kernel_number,
                 ),

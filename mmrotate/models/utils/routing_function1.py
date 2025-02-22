@@ -306,10 +306,10 @@ class RountingFunction3(nn.Module):
         self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
 
         self.dropout1 = nn.Dropout(dropout_rate)
-        self.fc_alpha = nn.Linear(in_channels, in_channels, bias=True)
+        self.fc_alpha = nn.Conv2d(in_channels, kernel_number , kernel_size=1, bias=True)
 
         self.dropout2 = nn.Dropout(dropout_rate)
-        self.fc_theta = nn.Linear(in_channels, kernel_number, bias=False)
+        self.fc_theta = nn.Conv2d(in_channels, kernel_number, kernel_size=1, bias=False)
 
         self.act_func = nn.Softsign()
         self.proportion = proportion / 180.0 * math.pi
@@ -325,17 +325,15 @@ class RountingFunction3(nn.Module):
         x = self.norm(x)
         x = self.relu(x)
 
-        x = self.avg_pool(x).squeeze(dim=-1).squeeze(dim=-1)  # avg_x.shape = [batch_size, Cin]
+        x = self.avg_pool(x)  # avg_x.shape = [batch_size, Cin]
 
-        x = self.dropout1(x)
-        x = self.fc_alpha(x)
+        alphas = self.dropout1(x)
+        alphas = self.fc_alpha(alphas).squeeze(dim=-1).squeeze(dim=-1)
+        alphas = torch.sigmoid(alphas)
         
-        x = self.dropout2(x)
-        x = self.fc_theta(x)
-    
-        alphas = torch.sigmoid(x)
-
-        angles = self.act_func(x)
+        angles = self.dropout2(x)
+        angles = self.fc_theta(angles).squeeze(dim=-1).squeeze(dim=-1)
+        angles = self.act_func(angles)
         angles = angles * self.proportion
 
         return alphas, angles
