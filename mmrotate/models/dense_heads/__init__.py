@@ -44,6 +44,7 @@ from .ADR2_oriented_rpn_head_pro import ADR2POrientedRPNHead
 from .ADR3_oriented_rpn_head_pro import ADR3POrientedRPNHead
 from .MADR_oriented_rpn_head_pro import MADRPOrientedRPNHead
 from .HW_ADR_oriented_rpn_head_pro import HWADRPOrientedRPNHead
+from .new_ADR_oriented_rpn_head_pro import NewADRPOrientedRPNHead
 __all__ = [
     'RotatedAnchorHead', 'RotatedRetinaHead', 'RotatedRPNHead',
     'OrientedRPNHead', 'RotatedRetinaRefineHead', 'ODMRefineHead',
@@ -59,5 +60,5 @@ __all__ = [
     'Group_ADRPOrientedRPNHead','Chunk_ADRPOrientedRPNHead','Max_ADRPOrientedRPNHead',
     'MLP_ADRPGOrientedRPNHead','TRANS_ADRPOrientedRPNHead','SCSA_ADRPOrientedRPNHead',
     'Promax_ADRPOrientedRPNHead','ADR1POrientedRPNHead','ADR2POrientedRPNHead','ADR3POrientedRPNHead',
-    'MADRPOrientedRPNHead','HWADRPOrientedRPNHead'
+    'MADRPOrientedRPNHead','HWADRPOrientedRPNHead','NewADRPOrientedRPNHead'
 ]
