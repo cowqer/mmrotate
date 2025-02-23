@@ -56,8 +56,8 @@ class new_RoutingFunction(nn.Module):
 
         self.act_func = nn.Softsign()
         self.proportion = proportion / 180.0 * math.pi
-        self.proportion_alpha = proportion_alpha
 
+        self.proportion_alpha = proportion_alpha
         
         self.discrete_angles = torch.arange(-proportion, proportion, 10)  # [-90, -80, ..., 80]
         self.discrete_angles = self.discrete_angles / 180.0 * math.pi  # 转换为弧度
@@ -91,10 +91,10 @@ class new_RoutingFunction(nn.Module):
 
     def map_to_discrete_angles(self, angles):
         """
-    将连续角度映射到最近的离散角度值。
-    :param angles: 连续角度值，范围为 (-π/2, π/2)
-    :return: 离散角度值，范围为 (-90°, 90°)，每隔 10°
-    """
+        将连续角度映射到最近的离散角度值。
+        :param angles: 连续角度值，范围为 (-π/2, π/2)
+        :return: 离散角度值，范围为 (-90°, 90°)，每隔 10°
+        """
     # 将 angles 从弧度转换为度数
         angles_deg = angles * 180.0 / math.pi
 
