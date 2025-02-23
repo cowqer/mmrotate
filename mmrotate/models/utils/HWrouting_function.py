@@ -31,48 +31,10 @@ class h_swish(nn.Module):
 
     def forward(self, x):
         return x * self.sigmoid(x)
-
-class DMSRB(nn.Module):
-    def __init__(self, channels_in, channels_out):
-        super(DMSRB, self).__init__()
-
-        kernel_size_1 = 3
-        kernel_size_2 = 5
-
-        self.conv_3_1 = nn.Conv2d(channels_in, channels_in, kernel_size_1, groups=channels_in,padding=1)
-        self.conv_3_2 = nn.Conv2d(channels_in * 2, channels_in * 2, kernel_size_1, groups=channels_in * 2,padding=1)
-        self.conv_5_1 = nn.Conv2d(channels_in, channels_in, kernel_size_2, groups=channels_in,padding=2)
-        self.conv_5_2 = nn.Conv2d(channels_in * 2, channels_in * 2, kernel_size_2, groups=channels_in * 2,padding=2)
-        self.confusion = nn.Conv2d(channels_in * 4, channels_out, 1, padding=0, stride=1)
-        self.relu = nn.ReLU(inplace=True)
-        
-        trunc_normal_(self.conv_3_1.weight, std=.02)
-        trunc_normal_(self.conv_3_2.weight, std=.02)
-        trunc_normal_(self.conv_5_1.weight, std=.02)
-        trunc_normal_(self.conv_5_2.weight, std=.02)
-        
-
-    def forward(self, x):
-        input_1 = x
-
-        output_3_1 = self.relu(self.conv_3_1(input_1))
-        output_5_1 = self.relu(self.conv_5_1(input_1))
-
-        input_2 = torch.cat([output_3_1, output_5_1], 1)
-        
-        output_3_2 = self.relu(self.conv_3_2(input_2))
-        output_5_2 = self.relu(self.conv_5_2(input_2))
-        
-        input_3 = torch.cat([output_3_2, output_5_2], 1)
-        
-        output = self.confusion(input_3)
-        output = output + x
-        return output
-    
     
 class HWRoutingFunction(nn.Module):
 
-    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0, lambda_1 = 0.1, lambda_2 = 0.1):
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0, lambda_1 = 0.05, lambda_2 = 0.05):
         super().__init__()
         self.kernel_number = kernel_number
         
@@ -105,20 +67,22 @@ class HWRoutingFunction(nn.Module):
         trunc_normal_(self.fc_theta.weight, std=.02)
 
     def forward(self, x):
-
-        x = self.dwc(x)
-        x = self.norm(x)
-        x = self.relu(x)
         
         branch1 = self.avg_pool_w(x)  # (batch_size, C, 1, W)
         branch1 = self.conv1(branch1)  # (batch_size, C, 1, W)
         branch1 = branch1.expand(-1, -1, x.size(2), -1)  # 扩展回 (batch_size, C, H, W)
 
-        branch2 = self.adaptive_pool_h(x)  # (batch_size, C, H, 1)
+        branch2 = self.avg_pool_h(x)  # (batch_size, C, H, 1)
         branch2 = self.conv2(branch2)  # (batch_size, C, H, 1)
         branch2 = branch2.expand(-1, -1, -1, x.size(3))  # 扩展回 (batch_size, C, H, W)
         
         x = self.lambda_1 * branch1 + self.lambda_2 * branch2 + x
+
+        x = self.dwc(x)
+        x = self.norm(x)
+        x = self.relu(x)
+        
+
         
         x = self.avg_pool(x).squeeze(dim=-1).squeeze(dim=-1)  # avg_x.shape = [batch_size, Cin]
 
@@ -137,23 +101,3 @@ class HWRoutingFunction(nn.Module):
         s = (f'kernel_number={self.kernel_number}')
         return s.format(**self.__dict__)
 
-
-if __name__ == "__main__":
-    # 创建一个 DMSRB 实例
-    channels_in = 64
-    channels_out = 64
-
-    dmsrb = DMSRB(channels_in, channels_out)
-
-    # 创建一个输入张量，形状为 (B, C, H, W)
-    batch_size = 2
-    height = 32
-    width = 32
-    input_tensor = torch.randn(batch_size, channels_in, height, width)
-
-    # 前向传播
-    output = dmsrb(input_tensor)
-
-    # 打印输入和输出的形状
-    print(f'Input shape: {input_tensor.shape}')
-    print(f'Output shape: {output.shape}')
