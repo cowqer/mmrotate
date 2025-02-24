@@ -15,7 +15,7 @@ from .ADR_oriented_rpn_head_xy import ADRconvOrientedRPNHeadxy
 # from .AP_oriented_rpn_head import APconvOrientedRPNHead
 from .ADR_oriented_rpn_head import ADRconvOrientedRPNHead
 from .ADR_P_oriented_rpn_head import ADRPconvOrientedRPNHead
-from .ADR_loss_oriented_rpn_head import ADRconvLossOrientedRPNHead
+from .ADR_loss_oriented_rpn_head import ADRP_test_OrientedRPNHead
 from .ADR_loss_oriented_rpn_head2 import ADRconvLossOrientedRPNHead2
 from .rotated_anchor_free_head import RotatedAnchorFreeHead
 from .rotated_anchor_head import RotatedAnchorHead
@@ -45,6 +45,7 @@ from .ADR3_oriented_rpn_head_pro import ADR3POrientedRPNHead
 from .MADR_oriented_rpn_head_pro import MADRPOrientedRPNHead
 from .HW_ADR_oriented_rpn_head_pro import HWADRPOrientedRPNHead
 from .new_ADR_oriented_rpn_head_pro import NewADRPOrientedRPNHead
+from .A_MSCA_DR_oriented_rpn_head_pro import MSCA_ADRPOrientedRPNHead
 __all__ = [
     'RotatedAnchorHead', 'RotatedRetinaHead', 'RotatedRPNHead',
     'OrientedRPNHead', 'RotatedRetinaRefineHead', 'ODMRefineHead',
@@ -53,12 +54,12 @@ __all__ = [
     'RotatedATSSHead', 'RotatedAnchorFreeHead', 'RotatedFCOSHead',
     'CSLRFCOSHead', 'OrientedRepPointsHead','AR_OrientedRPNHead',
     'AR2_OrientedRPNHead','PconvOrientedRPNHead','ADRconvOrientedRPNHead',
-    'ADRPconvOrientedRPNHead','ADRconvLossOrientedRPNHead',
+    'ADRPconvOrientedRPNHead','ADRP_test_OrientedRPNHead',
     'ADRconvLossOrientedRPNHead2','ADRconvOrientedRPNHead1','ADRconvOrientedRPNHeadxy',
     'ADRSTNOrientedRPNHead','ADRPOrientedRPNHead','SADRPOrientedRPNHead',
     'MSADRPOrientedRPNHead','ADRPGOrientedRPNHead','STN_ADRPOrientedRPNHead',
     'Group_ADRPOrientedRPNHead','Chunk_ADRPOrientedRPNHead','Max_ADRPOrientedRPNHead',
     'MLP_ADRPGOrientedRPNHead','TRANS_ADRPOrientedRPNHead','SCSA_ADRPOrientedRPNHead',
     'Promax_ADRPOrientedRPNHead','ADR1POrientedRPNHead','ADR2POrientedRPNHead','ADR3POrientedRPNHead',
-    'MADRPOrientedRPNHead','HWADRPOrientedRPNHead','NewADRPOrientedRPNHead'
+    'MADRPOrientedRPNHead','HWADRPOrientedRPNHead','NewADRPOrientedRPNHead','MSCA_ADRPOrientedRPNHead'
 ]

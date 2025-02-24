@@ -210,6 +210,9 @@ def main():
     # build the model and load checkpoint
     cfg.model.train_cfg = None
     cfg.device = get_device()
+        # cfg.device = get_device()
+    # cfg.device = 'cuda:1'##此行应该可以省略
+    torch.cuda.set_device(1)
     model = build_detector(cfg.model, test_cfg=cfg.get('test_cfg'))
 
     # fp16 setting
