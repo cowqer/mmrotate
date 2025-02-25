@@ -38,7 +38,7 @@ class ADR2POrientedRPNHead(RotatedRPNHead):
                 ),
                 kernel_number=self.kernel_number,
             )
-        self.alpha = nn.Parameter(torch.tensor(0.1))
+        self.alpha = nn.Parameter(torch.tensor(0.9))
         
         self.rpn_cls = nn.Conv2d(self.feat_channels,
                                  self.num_anchors * self.cls_out_channels, 1)
