@@ -11,7 +11,7 @@ from mmrotate.core import obb2xyxy
 from ..builder import ROTATED_HEADS
 from .rotated_rpn_head import RotatedRPNHead
 from ..utils import AdaptiveRotatedConv2d
-from ..utils import RountingFunction_stn_group,Gatedpconv
+from ..utils import RountingFunction_stn_group_chunk,Gatedpconv
 
 @ROTATED_HEADS.register_module()
 class Chunk_ADRPOrientedRPNHead(RotatedRPNHead):
@@ -32,7 +32,7 @@ class Chunk_ADRPOrientedRPNHead(RotatedRPNHead):
                 kernel_size=3, 
                 padding=1,
                 groups=1,
-                rounting_func=RountingFunction_stn_group(
+                rounting_func=RountingFunction_stn_group_chunk(
                     in_channels=self.feat_channels,
                     kernel_number=self.kernel_number,
                 ),
