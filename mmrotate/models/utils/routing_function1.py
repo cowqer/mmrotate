@@ -227,7 +227,7 @@ class RountingFunction1(nn.Module):
 class InceptionDWConv2d(nn.Module):
     """ Inception depthweise convolution
     """
-    def __init__(self, in_channels, square_kernel_size=3, band_kernel_size=11, branch_ratio=0.125):
+    def __init__(self, in_channels, square_kernel_size=3, band_kernel_size=7, branch_ratio=0.125):
         super().__init__()
         
         gc = int(in_channels * branch_ratio) # channel numbers of a convolution branch
@@ -242,7 +242,46 @@ class InceptionDWConv2d(nn.Module):
             (x_id, self.dwconv_hw(x_hw), self.dwconv_w(x_w), self.dwconv_h(x_h)), 
             dim=1,
         )
+    
+class DeceptionDWConv2d(nn.Module):
+    """ Inception depthweise convolution
+    """
+    def __init__(self, in_channels, square_kernel_size=3, band_kernel_size=7, branch_ratio=0.125):
+        super().__init__()
         
+        gc = int(in_channels * branch_ratio) # channel numbers of a convolution branch
+        self.dwconv_hw = nn.Conv2d(gc, gc, square_kernel_size, padding=square_kernel_size//2, groups=gc)
+        self.dwconv_w = nn.Conv2d(gc, gc, kernel_size=(1, band_kernel_size), padding=(0, band_kernel_size//2), groups=gc)
+        self.dwconv_h = nn.Conv2d(gc, gc, kernel_size=(band_kernel_size, 1), padding=(band_kernel_size//2, 0), groups=gc)
+        self.split_indexes = (gc, in_channels - 3 * gc, gc, gc)
+        
+    def forward(self, x):
+        x_id, x_hw, x_w, x_h = torch.split(x, self.split_indexes, dim=1)
+        return torch.cat(
+            (x_id, self.dwconv_hw(x_hw), self.dwconv_w(x_w), self.dwconv_h(x_h)), 
+            dim=1,
+        )
+
+class HWDWConv2d(nn.Module):
+    """ Inception depthweise convolution
+    """
+    def __init__(self, in_channels, square_kernel_size=3, band_kernel_size=7, branch_ratio=0.125):
+        super().__init__()
+        
+        gc = int(in_channels * branch_ratio)  # channel numbers of a convolution branch
+        self.dwconv_hw = nn.Conv2d(gc, gc, square_kernel_size, padding=square_kernel_size//2, groups=gc)
+        self.dwconv_w = nn.Conv2d(gc, gc, kernel_size=(1, band_kernel_size), padding=(0, band_kernel_size//2), groups=gc)
+        self.dwconv_h = nn.Conv2d(gc, gc, kernel_size=(band_kernel_size, 1), padding=(band_kernel_size//2, 0), groups=gc)
+        # Since we removed x_id, we only have three branches now
+        self.split_indexes = (in_channels - 2 * gc, gc, gc)
+        
+    def forward(self, x):
+        x_hw, x_w, x_h = torch.split(x, self.split_indexes, dim=1)
+        return torch.cat(
+            (self.dwconv_hw(x_hw), self.dwconv_w(x_w), self.dwconv_h(x_h)), 
+            dim=1,
+        )
+
 class RountingFunction2(nn.Module):
 
     def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
@@ -341,6 +380,68 @@ class RountingFunction3(nn.Module):
     def extra_repr(self):
         s = (f'kernel_number={self.kernel_number}')
         return s.format(**self.__dict__)
+
+class RountingFunction3(nn.Module):
+
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+        super().__init__()
+        self.kernel_number = kernel_number
+        self.dwc = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1,
+                             groups=in_channels, bias=False)
+        self.norm = LayerNormProxy(in_channels)
+        self.relu = nn.ReLU(inplace=True)
+
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+
+        self.dropout1 = nn.Dropout(dropout_rate)
+        self.fc_alpha = nn.Conv2d(in_channels, kernel_number , kernel_size=1, bias=True)
+
+        self.dropout2 = nn.Dropout(dropout_rate)
+        self.fc_theta = nn.Conv2d(in_channels, kernel_number, kernel_size=1, bias=False)
+
+        self.act_func = nn.Softsign()
+        self.proportion = proportion / 180.0 * math.pi
+        
+        # init weights
+        trunc_normal_(self.dwc.weight, std=.02)
+        trunc_normal_(self.fc_alpha.weight, std=.02)
+        trunc_normal_(self.fc_theta.weight, std=.02)
+
+    def forward(self, x):
+
+        x = self.dwc(x)
+        x = self.norm(x)
+        x = self.relu(x)
+
+        x = self.avg_pool(x)  # avg_x.shape = [batch_size, Cin]
+
+        alphas = self.dropout1(x)
+        alphas = self.fc_alpha(alphas).squeeze(dim=-1).squeeze(dim=-1)
+        alphas = torch.sigmoid(alphas)
+        
+        angles = self.dropout2(x)
+        angles = self.fc_theta(angles).squeeze(dim=-1).squeeze(dim=-1)
+        angles = self.act_func(angles)
+        angles = angles * self.proportion
+
+        return alphas, angles
+
+    def extra_repr(self):
+        s = (f'kernel_number={self.kernel_number}')
+        return s.format(**self.__dict__)
+
+class RountingFunction4(RountingFunction2):
+
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+        super().__init__(in_channels, kernel_number, dropout_rate, proportion)
+        self.InceptionDWConv2d = HWDWConv2d(in_channels)
+
+class RountingFunction5(RountingFunction2):
+
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+        super().__init__(in_channels, kernel_number, dropout_rate, proportion)
+        self.InceptionDWConv2d = DeceptionDWConv2d(in_channels)
+    
 
 if __name__ == "__main__":
     # Set random seed for reproducibility

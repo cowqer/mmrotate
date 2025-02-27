@@ -30,7 +30,7 @@ class SpatialAttention(nn.Module):
         avg_out = torch.mean(x, dim=1, keepdim=True)
         max_out, _ = torch.max(x, dim=1, keepdim=True)
         attention  = torch.cat([avg_out, max_out], dim=1)
-        attention  = self.conv1(x)
+        attention  = self.conv1(attention)
         return x * self.sigmoid(attention)
 
 class RountingFunction(nn.Module):
