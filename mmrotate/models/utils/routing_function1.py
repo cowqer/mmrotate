@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import warnings
+from .Mrouting_function import DMSRB
 
 #：实现从截断正态分布中采样，并用采样值填充张量tensor。
 def _trunc_normal_(tensor, mean, std, a, b):
@@ -250,7 +251,7 @@ class DeceptionDWConv2d(nn.Module):
         super().__init__()
         
         gc = int(in_channels * branch_ratio) # channel numbers of a convolution branch
-        self.dwconv_hw = nn.Conv2d(gc, gc, square_kernel_size, padding=square_kernel_size//2, groups=gc)
+        self.dwconv_hw = nn.Conv2d(in_channels - 3 * gc, in_channels - 3 * gc, square_kernel_size, padding=square_kernel_size//2, groups=gc)
         self.dwconv_w = nn.Conv2d(gc, gc, kernel_size=(1, band_kernel_size), padding=(0, band_kernel_size//2), groups=gc)
         self.dwconv_h = nn.Conv2d(gc, gc, kernel_size=(band_kernel_size, 1), padding=(band_kernel_size//2, 0), groups=gc)
         self.split_indexes = (gc, in_channels - 3 * gc, gc, gc)
@@ -269,7 +270,7 @@ class HWDWConv2d(nn.Module):
         super().__init__()
         
         gc = int(in_channels * branch_ratio)  # channel numbers of a convolution branch
-        self.dwconv_hw = nn.Conv2d(gc, gc, square_kernel_size, padding=square_kernel_size//2, groups=gc)
+        self.dwconv_hw = nn.Conv2d(in_channels - 2 * gc, in_channels - 2 * gc, square_kernel_size, padding=square_kernel_size//2, groups=gc)
         self.dwconv_w = nn.Conv2d(gc, gc, kernel_size=(1, band_kernel_size), padding=(0, band_kernel_size//2), groups=gc)
         self.dwconv_h = nn.Conv2d(gc, gc, kernel_size=(band_kernel_size, 1), padding=(band_kernel_size//2, 0), groups=gc)
         # Since we removed x_id, we only have three branches now
@@ -319,7 +320,9 @@ class RountingFunction2(nn.Module):
 
         x = self.avg_pool(x)  # avg_x.shape = [batch_size, Cin]
         x = self.fc_shared(x).squeeze(dim=-1).squeeze(dim=-1)
+        
         alphas, angles = torch.chunk(x, 2, dim=1)
+        
         alphas = torch.sigmoid(alphas)
         angles = self.act_func(angles)
         
@@ -381,54 +384,6 @@ class RountingFunction3(nn.Module):
         s = (f'kernel_number={self.kernel_number}')
         return s.format(**self.__dict__)
 
-class RountingFunction3(nn.Module):
-
-    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
-        super().__init__()
-        self.kernel_number = kernel_number
-        self.dwc = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1,
-                             groups=in_channels, bias=False)
-        self.norm = LayerNormProxy(in_channels)
-        self.relu = nn.ReLU(inplace=True)
-
-        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
-
-        self.dropout1 = nn.Dropout(dropout_rate)
-        self.fc_alpha = nn.Conv2d(in_channels, kernel_number , kernel_size=1, bias=True)
-
-        self.dropout2 = nn.Dropout(dropout_rate)
-        self.fc_theta = nn.Conv2d(in_channels, kernel_number, kernel_size=1, bias=False)
-
-        self.act_func = nn.Softsign()
-        self.proportion = proportion / 180.0 * math.pi
-        
-        # init weights
-        trunc_normal_(self.dwc.weight, std=.02)
-        trunc_normal_(self.fc_alpha.weight, std=.02)
-        trunc_normal_(self.fc_theta.weight, std=.02)
-
-    def forward(self, x):
-
-        x = self.dwc(x)
-        x = self.norm(x)
-        x = self.relu(x)
-
-        x = self.avg_pool(x)  # avg_x.shape = [batch_size, Cin]
-
-        alphas = self.dropout1(x)
-        alphas = self.fc_alpha(alphas).squeeze(dim=-1).squeeze(dim=-1)
-        alphas = torch.sigmoid(alphas)
-        
-        angles = self.dropout2(x)
-        angles = self.fc_theta(angles).squeeze(dim=-1).squeeze(dim=-1)
-        angles = self.act_func(angles)
-        angles = angles * self.proportion
-
-        return alphas, angles
-
-    def extra_repr(self):
-        s = (f'kernel_number={self.kernel_number}')
-        return s.format(**self.__dict__)
 
 class RountingFunction4(RountingFunction2):
 
@@ -437,6 +392,21 @@ class RountingFunction4(RountingFunction2):
         self.InceptionDWConv2d = HWDWConv2d(in_channels)
 
 class RountingFunction5(RountingFunction2):
+
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+        super().__init__(in_channels, kernel_number, dropout_rate, proportion)
+        self.InceptionDWConv2d = DeceptionDWConv2d(in_channels)
+        
+class RountingFunction6(RountingFunction3):
+
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+        super().__init__(in_channels, kernel_number, dropout_rate, proportion)
+        
+        self.dwc = DMSRB(in_channels,in_channels)
+        trunc_normal_(self.dwc.weight, std=.02)
+        
+
+class RountingFunction7(RountingFunction2):#2.28还没改
 
     def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
         super().__init__(in_channels, kernel_number, dropout_rate, proportion)

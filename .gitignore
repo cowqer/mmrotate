@@ -21,6 +21,7 @@ sdist/
 var/
 wheels/
 work_dirs/
+dotavis_images/
 data/
 *.egg-info/
 .installed.cfg

@@ -138,36 +138,6 @@ class RountingFunction_stn(RountingFunction):
         angles = angles * self.proportion
 
         return alphas, angles
-
-class RountingFunction_stn_group(RountingFunction):
-    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
-        super().__init__(in_channels, kernel_number, dropout_rate, proportion)
-        self.sa = SpatialAttention(7)
-
-        self.fc_alpha = nn.Conv2d(in_channels, kernel_number, kernel_size=1, bias=False)
-        self.fc_theta = nn.Conv2d(in_channels, kernel_number, kernel_size=1, bias=False)
-        
-    def forward(self, x):
-        # Apply spatial attention mechanism
-        attention = self.sa(x)
-        x = x * attention
-
-        x = self.dwc(x)
-        x = self.norm(x)
-        x = self.relu(x)
-
-        x = self.avg_pool(x)  # x.shape = [batch_size, Cin, 1, 1]
-        x = self.dropout1(x)
-        
-        alphas = self.fc_alpha(x).squeeze(dim=-1).squeeze(dim=-1)  # [batch_size, kernel_number]
-        angles = self.fc_theta(x).squeeze(dim=-1).squeeze(dim=-1)
-        
-        alphas = torch.sigmoid(alphas)
-        
-        angles = self.act_func(angles)
-        angles = angles * self.proportion
-
-        return alphas, angles
     
 class RountingFunction_stn_group(RountingFunction):
     def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
@@ -251,6 +221,8 @@ class RountingFunction_stn_group_chunk(RountingFunction):
         angles = angles * self.proportion  # Adjust based on proportion
 
         return alphas, angles
+    
+    
 
 class RountingFunction_promax(nn.Module):
     def __init__(self, in_channels, kernel_number, dropout_rate=0.1, proportion=40.0):
