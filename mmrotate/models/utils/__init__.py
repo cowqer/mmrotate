@@ -10,7 +10,7 @@ from .routing_function import (RountingFunction , RountingFunction_AMpool,
                                RountingFunction_stn, RountingFunction_stn_group
                                ,RountingFunction_stn_group_chunk,
                                RountingFunction_promax,RoutingFunction_Transformer)
-from .routing_function1 import (RountingFunction1,RountingFunction2,RountingFunction3,RountingFunction4,RountingFunction5,RountingFunction6)
+from .routing_function1 import (RountingFunction1,RountingFunction2,RountingFunction3,RountingFunction4,RountingFunction5,RountingFunction6,RountingFunction7)
 from .apconv import APConv
 from .AFSM import AdaptiveAlphaLayer
 from .routing_function_dw2p import RountingFunctiondw2p
@@ -37,7 +37,8 @@ __all__ = [
     'RountingFunction_stn','RountingFunction_stn_group','RountingFunction_stn_group_chunk',
     'RountingFunction_promax','RoutingFunction_Transformer','RountingFunction_SCSA',
     'RountingFunction1','RountingFunction2','MRoutingFunction','RountingFunction3','HWRoutingFunction',
-    'new_RoutingFunction','RountingFunction_MSCA','RountingFunction4','RountingFunction5','RountingFunction6'
+    'new_RoutingFunction','RountingFunction_MSCA','RountingFunction4','RountingFunction5','RountingFunction6',
+    'RountingFunction7'
     
 ]
 
