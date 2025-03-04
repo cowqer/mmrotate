@@ -299,7 +299,7 @@ class RountingFunction5(RountingFunction2):
         super().__init__(in_channels, kernel_number, dropout_rate, proportion)
         self.InceptionDWConv2d = DeceptionDWConv2d(in_channels)
         
-from .MSCA import MSCAAttention   
+from .MSCA import MSCAAttention,HWMSCAAttention
 
 class RountingFunction6(nn.Module):
 
@@ -363,6 +363,7 @@ class RountingFunction7(nn.Module):#2.28还没改
         
         self.kernel_number = kernel_number
         self.msca = MSCAAttention(in_channels)
+        
         self.HWDWConv2d = HWDWConv2d(in_channels)
 
         self.norm = LayerNormProxy(in_channels)
@@ -401,11 +402,66 @@ class RountingFunction7(nn.Module):#2.28还没改
         angles = self.fc_theta(angles).squeeze(dim=-1).squeeze(dim=-1)
         angles = self.act_func(angles)
         angles = angles * self.proportion
+        
+        return alphas, angles
+
+    def extra_repr(self):
+        s = (f'kernel_number={self.kernel_number}')
+        return s.format(**self.__dict__)
+
+
+class RountingFunction8(RountingFunction3):
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+        super().__init__(in_channels, kernel_number, dropout_rate, proportion)
+        self.hwmsca = HWMSCAAttention(in_channels)
+        
+    def forward(self, x):
+        
+        x = self.hwmsca(x)
+        
+        x = self.dwc(x)
+        x = self.norm(x)
+        x = self.relu(x)
+
+        x = self.avg_pool(x)  # avg_x.shape = [batch_size, Cin]
+
+        alphas = self.dropout1(x)
+        alphas = self.fc_alpha(alphas).squeeze(dim=-1).squeeze(dim=-1)
+        alphas = torch.sigmoid(alphas)
+        
+        angles = self.dropout2(x)
+        angles = self.fc_theta(angles).squeeze(dim=-1).squeeze(dim=-1)
+        angles = self.act_func(angles)
+        angles = angles * self.proportion
 
         return alphas, angles
 
+class RountingFunction9(RountingFunction3):
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+        super().__init__(in_channels, kernel_number, dropout_rate, proportion)
+        self.hwmsca = HWMSCAAttention(in_channels)
+        self.HWDWConv2d = HWDWConv2d(in_channels)
+        
+    def forward(self, x):
+        
+        x = self.hwmsca(x)
+        
+        x = self.HWDWConv2d(x)
+        x = self.norm(x)
+        x = self.relu(x)
 
+        x = self.avg_pool(x)  # avg_x.shape = [batch_size, Cin]
 
+        alphas = self.dropout1(x)
+        alphas = self.fc_alpha(alphas).squeeze(dim=-1).squeeze(dim=-1)
+        alphas = torch.sigmoid(alphas)
+        
+        angles = self.dropout2(x)
+        angles = self.fc_theta(angles).squeeze(dim=-1).squeeze(dim=-1)
+        angles = self.act_func(angles)
+        angles = angles * self.proportion
+
+        return alphas, angles
 
 if __name__ == "__main__":
     # Set random seed for reproducibility

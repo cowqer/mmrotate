@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .weight_init import trunc_normal_
-from .MSCA import MSCAAttention
+from .MSCA import MSCAAttention,HWMSCAAttention
 
 class LayerNormProxy(nn.Module):
     # copy from https://github.com/LeapLabTHU/DAT/blob/main/models/dat_blocks.py
@@ -40,7 +40,7 @@ class RountingFunction_MSCA(nn.Module):
         self.kernel_number = kernel_number
         self.dwc = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1,
                              groups=in_channels, bias=False)
-        self.msca = MSCAAttention(in_channels)
+        self.msca = HWMSCAAttention(in_channels)
         self.norm = LayerNormProxy(in_channels)
         self.relu = nn.ReLU(inplace=True)
 

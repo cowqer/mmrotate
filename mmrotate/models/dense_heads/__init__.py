@@ -46,6 +46,8 @@ from .ADR4_oriented_rpn_head_pro import ADR4POrientedRPNHead
 from .ADR5_oriented_rpn_head_pro import ADR5POrientedRPNHead
 from .ADR6_oriented_rpn_head_pro import ADR6POrientedRPNHead
 from .ADR7_oriented_rpn_head_pro import ADR7POrientedRPNHead
+from .ADR8_oriented_rpn_head_pro import ADR8POrientedRPNHead
+from .ADR9_oriented_rpn_head_pro import ADR9POrientedRPNHead
 from .MADR_oriented_rpn_head_pro import MADRPOrientedRPNHead
 from .HW_ADR_oriented_rpn_head_pro import HWADRPOrientedRPNHead
 from .new_ADR_oriented_rpn_head_pro import NewADRPOrientedRPNHead
@@ -67,5 +69,6 @@ __all__ = [
     'MLP_ADRPGOrientedRPNHead','TRANS_ADRPOrientedRPNHead','SCSA_ADRPOrientedRPNHead',
     'Promax_ADRPOrientedRPNHead','ADR1POrientedRPNHead','ADR2POrientedRPNHead','ADR3POrientedRPNHead',
     'MADRPOrientedRPNHead','HWADRPOrientedRPNHead','NewADRPOrientedRPNHead','MSCA_ADRPOrientedRPNHead',
-    'ADR4POrientedRPNHead','ADR5POrientedRPNHead','ADR6POrientedRPNHead','ADR7POrientedRPNHead'
+    'ADR4POrientedRPNHead','ADR5POrientedRPNHead','ADR6POrientedRPNHead','ADR7POrientedRPNHead',
+    'ADR8POrientedRPNHead','ADR9POrientedRPNHead'
 ]
