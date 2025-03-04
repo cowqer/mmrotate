@@ -14,7 +14,7 @@ from ..utils import AdaptiveRotatedConv2d
 from ..utils import RountingFunction_attn,Gatedpconv
 
 @ROTATED_HEADS.register_module()
-class MSCA_ADRPOrientedRPNHead(RotatedRPNHead):
+class MSCA1_ADRPOrientedRPNHead(RotatedRPNHead):
     """Oriented RPN head for Oriented R-CNN."""
 
     def _init_layers(self):

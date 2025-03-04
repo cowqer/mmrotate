@@ -61,19 +61,19 @@ class MSCAAttention1(nn.Module):
         u = x.clone()
         
         attn = self.conv0(x)
-        print('attn:',attn.shape)
+        # print('attn:',attn.shape)
         
         attn_0_w = self.conv0_1(attn)
         attn_1_w = self.conv1_1(attn)
         attn_2_w = self.conv2_1(attn)
         attn_w = attn_0_w + attn_1_w + attn_2_w
-        print('attn_w:',attn_w.shape)
+        # print('attn_w:',attn_w.shape)
         
         attn_0_h = self.conv0_2(attn)
         attn_1_h = self.conv1_2(attn)
         attn_2_h = self.conv2_2(attn)
         attn_h = attn_0_h + attn_1_h + attn_2_h
-        print('attn_h:',attn_h.shape)
+        # print('attn_h:',attn_h.shape)
         
         alpha = 0.5
         attn = attn + alpha * attn_w + (1 - alpha) * attn_h
