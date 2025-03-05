@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .weight_init import trunc_normal_
-from .MSCA import MSCAAttention, HWMSCAAttention, MSCAAttention1
+from .MSCA import MSCAAttention, HWMSCAAttention, MSCAAttention1, MSCAAttention2,MSCAAttention3
 
 class LayerNormProxy(nn.Module):
     # copy from https://github.com/LeapLabTHU/DAT/blob/main/models/dat_blocks.py
@@ -33,7 +33,7 @@ class h_swish(nn.Module):
     def forward(self, x):
         return x * self.sigmoid(x)
     
-    
+    ###adp0 为初始msca adp为hwmasca
 class RountingFunction_MSCA(nn.Module):
 
     def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
@@ -41,7 +41,7 @@ class RountingFunction_MSCA(nn.Module):
         self.kernel_number = kernel_number
         self.dwc = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1,
                              groups=in_channels, bias=False)
-        self.msca = HWMSCAAttention(in_channels)
+        self.msca = MSCAAttention(in_channels)
         self.norm = LayerNormProxy(in_channels)
         self.relu = nn.ReLU(inplace=True)
 
@@ -90,3 +90,13 @@ class RountingFunction_attn(RountingFunction_MSCA):
     def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
         super().__init__(in_channels, kernel_number, dropout_rate, proportion)
         self.msca = MSCAAttention1(in_channels)
+        
+class RountingFunction_attn2(RountingFunction_MSCA):
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+        super().__init__(in_channels, kernel_number, dropout_rate, proportion)
+        self.msca = MSCAAttention2(in_channels)
+
+class RountingFunction_attn2(RountingFunction_MSCA):
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+        super().__init__(in_channels, kernel_number, dropout_rate, proportion)
+        self.msca = MSCAAttention3(in_channels)

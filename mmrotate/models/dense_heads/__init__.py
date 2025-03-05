@@ -53,6 +53,8 @@ from .HW_ADR_oriented_rpn_head_pro import HWADRPOrientedRPNHead
 from .new_ADR_oriented_rpn_head_pro import NewADRPOrientedRPNHead
 from .A_attn_DR_oriented_rpn_head_pro import MSCA1_ADRPOrientedRPNHead
 from .A_MSCA_DR_oriented_rpn_head_pro import MSCA_ADRPOrientedRPNHead
+from .A_attn1_DR_oriented_rpn_head_pro import MSCA2_ADRPOrientedRPNHead
+from .A_attn2_DR_oriented_rpn_head_pro import MSCA3_ADRPOrientedRPNHead
 
 __all__ = [
     'RotatedAnchorHead', 'RotatedRetinaHead', 'RotatedRPNHead',
@@ -71,5 +73,7 @@ __all__ = [
     'Promax_ADRPOrientedRPNHead','ADR1POrientedRPNHead','ADR2POrientedRPNHead','ADR3POrientedRPNHead',
     'MADRPOrientedRPNHead','HWADRPOrientedRPNHead','NewADRPOrientedRPNHead','MSCA_ADRPOrientedRPNHead',
     'ADR4POrientedRPNHead','ADR5POrientedRPNHead','ADR6POrientedRPNHead','ADR7POrientedRPNHead',
-    'ADR8POrientedRPNHead','ADR9POrientedRPNHead','MSCA1_ADRPOrientedRPNHead'
+    'ADR8POrientedRPNHead','ADR9POrientedRPNHead','MSCA1_ADRPOrientedRPNHead','MSCA2_ADRPOrientedRPNHead',
+    'MSCA3_ADRPOrientedRPNHead'
+    
 ]
