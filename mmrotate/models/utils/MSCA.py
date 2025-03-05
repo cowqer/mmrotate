@@ -205,7 +205,6 @@ class MSCAAttention3(nn.Module):
         attn_h = attn_0_h + attn_1_h + attn_2_h
         attn_h = self.conv3(attn_h)
         # print('attn_h:',attn_h.shape)
-        
         # alpha = 0.5
         # attn = attn + alpha * attn_w + (1 - alpha) * attn_h
         attn = attn + attn_w + attn_h
@@ -213,11 +212,79 @@ class MSCAAttention3(nn.Module):
         attn = self.conv3(attn)
  
         return attn * u
+    
+class SpatialAttention(nn.Module):
+    
+    def __init__(self, kernel_size=7):
+        super(SpatialAttention, self).__init__()
+
+        self.conv1 = nn.Conv2d(2, 1, kernel_size, padding=kernel_size//2, bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        
+        avg_out = torch.mean(x, dim=1, keepdim=True)
+        max_out, _ = torch.max(x, dim=1, keepdim=True)
+        x = torch.cat([avg_out, max_out], dim=1)
+        x = self.conv1(x)
+        print('x:',x.shape)
+        
+        return self.sigmoid(x) 
+    
+class ChannelAttention(nn.Module):
+    def __init__(self, in_channels, reduction=4):
+        super(ChannelAttention, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
+        self.fc = nn.Sequential(
+            nn.Conv2d(in_channels, in_channels // reduction, 1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels // reduction, in_channels, 1, bias=False)
+        )
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        avg_out = self.fc(self.avg_pool(x))
+        max_out = self.fc(self.max_pool(x))
+        out = avg_out + max_out
+        return self.sigmoid(out)
+    
+class MSCAAttention4(MSCAAttention):
+    def __init__(self, dim):
+        super().__init__(dim)
+        
+        self.SA = SpatialAttention()
+        self.CA = ChannelAttention(dim)
+ 
+    def forward(self, x):
+        u = x.clone()
+        
+        attn = self.conv0(x)
+ 
+        attn_0 = self.conv0_1(attn)
+        attn_0 = self.conv0_2(attn_0)
+ 
+        attn_1 = self.conv1_1(attn)
+        attn_1 = self.conv1_2(attn_1)
+ 
+        attn_2 = self.conv2_1(attn)
+        attn_2 = self.conv2_2(attn_2)
+        
+        attn = attn + attn_0 + attn_1 + attn_2
+
+        attn = self.SA(attn) * attn
+
+        attn = self.conv3(attn)
+        
+        attn_c = self.CA(u)
+        attn = attn * attn_c
+        
+        return attn * u
 
 if __name__ == '__main__':
 
     dim = 64
-    model = MSCAAttention1(64)
+    model = MSCAAttention4(64)
 
     # 创建一个随机输入张量，形状为 (batch_size, channels, height, width)
     x = torch.randn(1, 64, 32, 32)

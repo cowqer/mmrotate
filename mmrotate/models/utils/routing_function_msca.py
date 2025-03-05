@@ -96,7 +96,7 @@ class RountingFunction_attn2(RountingFunction_MSCA):
         super().__init__(in_channels, kernel_number, dropout_rate, proportion)
         self.msca = MSCAAttention2(in_channels)
 
-class RountingFunction_attn2(RountingFunction_MSCA):
+class RountingFunction_attn3(RountingFunction_MSCA):
     def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
         super().__init__(in_channels, kernel_number, dropout_rate, proportion)
         self.msca = MSCAAttention3(in_channels)
