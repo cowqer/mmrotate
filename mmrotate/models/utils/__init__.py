@@ -26,7 +26,7 @@ from .routing_function_SCSA import RountingFunction_SCSA
 from .Mrouting_function import MRoutingFunction
 from .HWrouting_function import HWRoutingFunction
 from .new_routing_function import new_RoutingFunction
-from .routing_function_msca import (RountingFunction_MSCA, RountingFunction_attn, RountingFunction_attn2, RountingFunction_attn3)
+from .routing_function_msca import (RountingFunction_MSCA, RountingFunction_attn, RountingFunction_attn2, RountingFunction_attn3, RountingFunction_attn4, RountingFunction_attn5, RountingFunction_attn6)
 
 __all__ = [
     'ORConv2d', 'RotationInvariantPooling', 'ennConv', 'ennReLU', 'ennAvgPool',
@@ -41,7 +41,7 @@ __all__ = [
     'RountingFunction1','RountingFunction2','MRoutingFunction','RountingFunction3','HWRoutingFunction',
     'new_RoutingFunction','RountingFunction_MSCA','RountingFunction4','RountingFunction5','RountingFunction6',
     'RountingFunction7','RountingFunction8','RountingFunction9','RountingFunction_attn','RountingFunction_attn2',
-    'RountingFunction_attn3'
+    'RountingFunction_attn3','RountingFunction_attn4','RountingFunction_attn5','RountingFunction_attn6'
     
 ]
 
