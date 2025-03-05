@@ -190,21 +190,19 @@ class MSCAAttention3(nn.Module):
         u = x.clone()
         
         attn = self.conv0(x)
-        # print('attn:',attn.shape)
-        
+
         attn_0_w = self.conv0_1(attn)
         attn_1_w = self.conv1_1(attn)
         attn_2_w = self.conv2_1(attn)
         attn_w = attn_0_w + attn_1_w + attn_2_w
         attn_w = self.conv3(attn_w)
-        # print('attn_w:',attn_w.shape)
         
         attn_0_h = self.conv0_2(attn)
         attn_1_h = self.conv1_2(attn)
         attn_2_h = self.conv2_2(attn)
         attn_h = attn_0_h + attn_1_h + attn_2_h
         attn_h = self.conv3(attn_h)
-        # print('attn_h:',attn_h.shape)
+
         # alpha = 0.5
         # attn = attn + alpha * attn_w + (1 - alpha) * attn_h
         attn = attn + attn_w + attn_h
@@ -227,34 +225,54 @@ class SpatialAttention(nn.Module):
         max_out, _ = torch.max(x, dim=1, keepdim=True)
         x = torch.cat([avg_out, max_out], dim=1)
         x = self.conv1(x)
-        print('x:',x.shape)
         
         return self.sigmoid(x) 
-    
-class ChannelAttention(nn.Module):
-    def __init__(self, in_channels, reduction=4):
-        super(ChannelAttention, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.max_pool = nn.AdaptiveMaxPool2d(1)
-        self.fc = nn.Sequential(
-            nn.Conv2d(in_channels, in_channels // reduction, 1, bias=False),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels // reduction, in_channels, 1, bias=False)
-        )
-        self.sigmoid = nn.Sigmoid()
 
-    def forward(self, x):
-        avg_out = self.fc(self.avg_pool(x))
-        max_out = self.fc(self.max_pool(x))
-        out = avg_out + max_out
-        return self.sigmoid(out)
     
 class MSCAAttention4(MSCAAttention):
     def __init__(self, dim):
         super().__init__(dim)
         
         self.SA = SpatialAttention()
-        self.CA = ChannelAttention(dim)
+        self.conv2_1 = nn.Conv2d(dim, dim, (1, 7), padding=(0, 9), groups=dim, dilation=3)
+        self.conv2_2 = nn.Conv2d(dim, dim, (7, 1), padding=(9, 0), groups=dim, dilation=3)
+
+ 
+    def forward(self, x):
+        u = x.clone()
+        
+        attn = self.conv0(x)
+ 
+        attn_0 = self.conv0_1(attn)
+        attn_0 = self.conv0_2(attn_0)
+
+        attn_1 = self.conv1_1(attn)
+        attn_1 = self.conv1_2(attn_1)
+
+        attn_2 = self.conv2_1(attn)
+        attn_2 = self.conv2_2(attn_2)
+
+        attn = attn + attn_0 + attn_1 + attn_2
+
+        attn = self.SA(attn) * attn
+
+        attn = self.conv3(attn)
+        
+        return attn * u
+    
+class MSCAAttention5(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.conv0 = nn.Conv2d(dim, dim, 5, padding=2, groups=dim)
+        self.conv0_1 = nn.Conv2d(dim, dim, (1, 7), padding=(0, 3), groups=dim)
+        self.conv0_2 = nn.Conv2d(dim, dim, (7, 1), padding=(3, 0), groups=dim)
+ 
+        self.conv1_1 = nn.Conv2d(dim, dim, (1, 11), padding=(0, 5), groups=dim)
+        self.conv1_2 = nn.Conv2d(dim, dim, (11, 1), padding=(5, 0), groups=dim)
+ 
+        self.conv2_1 = nn.Conv2d(dim, dim, (1, 21), padding=(0, 10), groups=dim)
+        self.conv2_2 = nn.Conv2d(dim, dim, (21, 1), padding=(10, 0), groups=dim)
+        self.conv3 = nn.Conv2d(dim, dim, 1)
  
     def forward(self, x):
         u = x.clone()
@@ -271,14 +289,53 @@ class MSCAAttention4(MSCAAttention):
         attn_2 = self.conv2_2(attn_2)
         
         attn = attn + attn_0 + attn_1 + attn_2
+ 
+        attn = self.conv3(attn)
+ 
+        return attn * u
 
-        attn = self.SA(attn) * attn
+class MSCAAttention6(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.conv0 = nn.Conv2d(dim, dim, 5, padding=2, groups=dim)
+
+        self.conv0_1 = nn.Conv2d(dim, dim, (1, 7), padding=(0, 3), groups=dim)
+        self.conv0_2 = nn.Conv2d(dim, dim, (7, 1), padding=(3, 0), groups=dim)
+
+        self.conv1_1 = nn.Conv2d(dim, dim, (1, 11), padding=(0, 5), groups=dim)
+        self.conv1_2 = nn.Conv2d(dim, dim, (11, 1), padding=(5, 0), groups=dim)
+
+        self.conv2_1 = nn.Conv2d(dim, dim, (1, 21), padding=(0, 10), groups=dim)
+        self.conv2_2 = nn.Conv2d(dim, dim, (21, 1), padding=(10, 0), groups=dim)
+
+        self.conv3 = nn.Conv2d(dim, dim, 1)
+
+        # **可学习的权重参数**
+        self.scale_weights = nn.Parameter(torch.ones(3))  
+
+    def forward(self, x):
+        u = x.clone()
+
+        attn = self.conv0(x)
+
+        # **计算不同尺度的注意力**
+        attn_0 = self.conv0_1(attn)
+        attn_0 = self.conv0_2(attn_0)
+ 
+        attn_1 = self.conv1_1(attn)
+        attn_1 = self.conv1_2(attn_1)
+ 
+        attn_2 = self.conv2_1(attn)
+        attn_2 = self.conv2_2(attn_2)
+
+        # **归一化可学习权重**
+        scale_weights = F.softmax(self.scale_weights, dim=0)
+
+        # **加权融合不同尺度**
+        attn = scale_weights[0] * attn_0 + scale_weights[1] * attn_1 + scale_weights[2] * attn_2
 
         attn = self.conv3(attn)
-        
-        attn_c = self.CA(u)
-        attn = attn * attn_c
-        
+
         return attn * u
 
 if __name__ == '__main__':
