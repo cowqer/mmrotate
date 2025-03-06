@@ -34,6 +34,7 @@ class MSCAAttention(nn.Module):
  
         attn_2 = self.conv2_1(attn)
         attn_2 = self.conv2_2(attn_2)
+        
         attn = attn + attn_0 + attn_1 + attn_2
  
         attn = self.conv3(attn)
@@ -92,33 +93,36 @@ class HWMSCAAttention(nn.Module):
         self.conv1_1 = nn.Conv2d(dim, dim, (1, 11), padding=0, groups=dim)
         self.conv1_2 = nn.Conv2d(dim, dim, (11, 1), padding=0, groups=dim)
  
-        self.conv2_1 = nn.Conv2d(dim, dim, (1, 15), padding=0, groups=dim)
-        self.conv2_2 = nn.Conv2d(dim, dim, (15, 1), padding=0, groups=dim)
+        self.conv2_1 = nn.Conv2d(dim, dim, (1, 21), padding=0, groups=dim)
+        self.conv2_2 = nn.Conv2d(dim, dim, (21, 1), padding=0, groups=dim)
         self.conv3 = nn.Conv2d(dim, dim, 1)
+        self.fusion = nn.Conv2d(dim, dim, 3)
  
     def forward(self, x):
         u = x.clone()
+        
         attn = self.conv0(x)
-
-        attn_0 = F.pad(attn, (3, 3, 0, 0))  
+        
+        attn_0 = F.pad(attn, (3, 3, 1, 1))  # 在左右侧填充5
         attn_0 = self.conv0_1(attn_0)
-
-        attn_0 = F.pad(attn_0, (0, 0, 3, 3))  
+        attn_0 = F.pad(attn_0, (1, 1, 3, 3))  # 在上下侧填充3
         attn_0 = self.conv0_2(attn_0)
+        # print('attn_0:',attn_0.shape)
 
-        attn_1 = F.pad(attn, (5, 5, 0, 0))  # 在上下侧填充5
+        attn_1 = F.pad(attn, (5, 5, 1, 1))  
         attn_1 = self.conv1_1(attn_1)
-
-        attn_1 = F.pad(attn_1, (0, 0, 5, 5))  # 在左右侧填充5
+        attn_1 = F.pad(attn_1, (1, 1, 5, 5))  
         attn_1 = self.conv1_2(attn_1)
+        # print('attn_1:',attn_1.shape)
 
-        attn_2 = F.pad(attn, (7, 7, 0, 0))  
+        attn_2 = F.pad(attn, (10, 10, 1, 1))  
         attn_2 = self.conv2_1(attn_2)
-
-        attn_2 = F.pad(attn_2, (0, 0, 7, 7)) 
+        attn_2 = F.pad(attn_2, (1, 1, 10, 10)) 
         attn_2 = self.conv2_2(attn_2)
-
-        attn = attn + attn_0 + attn_1 + attn_2
+        # print('attn_2:',attn_2.shape)
+        attn_fusion = self.fusion(attn_0 + attn_1 + attn_2)
+        # print('attn_fusion:',attn_fusion.shape)
+        attn = attn + attn_fusion
  
         attn = self.conv3(attn)
  
@@ -341,7 +345,7 @@ class MSCAAttention6(nn.Module):
 if __name__ == '__main__':
 
     dim = 64
-    model = MSCAAttention4(64)
+    model = HWMSCAAttention(64)
 
     # 创建一个随机输入张量，形状为 (batch_size, channels, height, width)
     x = torch.randn(1, 64, 32, 32)

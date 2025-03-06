@@ -86,6 +86,11 @@ class RountingFunction_MSCA(nn.Module):
         s = (f'kernel_number={self.kernel_number}')
         return s.format(**self.__dict__)
 
+class RountingFunction_attnHW(RountingFunction_MSCA):
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+        super().__init__(in_channels, kernel_number, dropout_rate, proportion)
+        self.msca = HWMSCAAttention(in_channels)
+
 class RountingFunction_attn(RountingFunction_MSCA):
     def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
         super().__init__(in_channels, kernel_number, dropout_rate, proportion)
