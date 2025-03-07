@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .weight_init import trunc_normal_
-from .MSCA import MSCAAttention, HWMSCAAttention, MSCAAttention1, MSCAAttention2, MSCAAttention3, MSCAAttention4, MSCAAttention5, MSCAAttention6
+from .MSCA import MSCAAttention, HWMSCAAttention, MSCAAttention1, MSCAAttention2, MSCAAttention3, MSCAAttention4, MSCAAttention5, MSCAAttention6, MSCAAttention7
 
 class LayerNormProxy(nn.Module):
     # copy from https://github.com/LeapLabTHU/DAT/blob/main/models/dat_blocks.py
@@ -120,3 +120,8 @@ class RountingFunction_attn6(RountingFunction_MSCA):
     def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
         super().__init__(in_channels, kernel_number, dropout_rate, proportion)
         self.msca = MSCAAttention6(in_channels)
+        
+class RountingFunction_attn7(RountingFunction_MSCA):
+    def __init__(self, in_channels, kernel_number, dropout_rate=0.2, proportion=40.0):
+        super().__init__(in_channels, kernel_number, dropout_rate, proportion)
+        self.msca = MSCAAttention7(in_channels)

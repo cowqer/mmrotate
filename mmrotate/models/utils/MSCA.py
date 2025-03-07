@@ -96,6 +96,7 @@ class HWMSCAAttention(nn.Module):
  
         self.conv2_1 = nn.Conv2d(dim, dim, (1, 21), padding=0, groups=dim)
         self.conv2_2 = nn.Conv2d(dim, dim, (21, 1), padding=0, groups=dim)
+        
         self.conv3 = nn.Conv2d(dim, dim, 1)
         self.fusion = nn.Conv2d(dim, dim, 3)
  
@@ -356,10 +357,54 @@ class MSCAAttention6(nn.Module):
 
         return attn * u
 
+        
+class MSCAAttention7(MSCAAttention):
+    def __init__(self, dim):
+        super().__init__(dim)
+        
+        gc = int(dim * 0.125)
+        self.conv0 = nn.Conv2d(dim, dim, 5, padding=2, groups=dim)
+        
+        self.conv0_1 = nn.Conv2d(gc, gc, (1, 7), padding=(0, 3), groups=gc)
+        self.conv0_2 = nn.Conv2d(gc, gc, (7, 1), padding=(3, 0), groups=gc)
+
+        self.conv1_1 = nn.Conv2d(gc, gc, (1, 11), padding=(0, 5), groups=gc)
+        self.conv1_2 = nn.Conv2d(gc, gc, (11, 1), padding=(5, 0), groups=gc)
+
+        self.conv2_1 = nn.Conv2d(gc, gc, (1, 21), padding=(0, 10), groups=gc)
+        self.conv2_2 = nn.Conv2d(gc, gc, (21, 1), padding=(10, 0), groups=gc)
+        
+        self.split_indexes = (dim -  3 * gc, gc, gc, gc)
+        
+    def forward(self, x):
+        
+        u = x.clone()
+        
+        attn = self.conv0(x)
+        
+        attn_, attn_0, attn_1, attn_2 = torch.split(attn, self.split_indexes, dim=1)
+        
+        attn_0 = self.conv0_1(attn_0)
+        attn_0 = self.conv0_2(attn_0)
+
+        attn_1 = self.conv1_1(attn_1)
+        attn_1 = self.conv1_2(attn_1)
+
+        attn_2 = self.conv2_1(attn_2)
+        attn_2 = self.conv2_2(attn_2)
+
+        attn = torch.cat([attn_, attn_0, attn_1, attn_2], dim=1)
+
+        attn = self.conv3(attn)
+        
+        return attn * u
+        
+    
+
 if __name__ == '__main__':
 
     dim = 64
-    model = MSCAAttention5(64)
+    model = MSCAAttention7(64)
 
     # 创建一个随机输入张量，形状为 (batch_size, channels, height, width)
     x = torch.randn(1, 64, 32, 32)

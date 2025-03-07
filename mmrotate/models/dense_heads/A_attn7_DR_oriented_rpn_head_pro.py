@@ -11,12 +11,12 @@ from mmrotate.core import obb2xyxy
 from ..builder import ROTATED_HEADS
 from .rotated_rpn_head import RotatedRPNHead
 from ..utils import AdaptiveRotatedConv2d
-from ..utils import RountingFunction_attn2,Gatedpconv
+from ..utils import RountingFunction_attn7,Gatedpconv
 from . import MSCA1_ADRPOrientedRPNHead
 
 
 @ROTATED_HEADS.register_module()
-class MSCA2_ADRPOrientedRPNHead(MSCA1_ADRPOrientedRPNHead):
+class MSCA7_ADRPOrientedRPNHead(MSCA1_ADRPOrientedRPNHead):
     """Oriented RPN head for Oriented R-CNN."""
 
     def _init_layers(self):
@@ -28,7 +28,7 @@ class MSCA2_ADRPOrientedRPNHead(MSCA1_ADRPOrientedRPNHead):
             kernel_size=3, 
             padding=1,
             groups=1,
-            rounting_func=RountingFunction_attn2(
+            rounting_func=RountingFunction_attn7(
                 in_channels=self.feat_channels,
                 kernel_number=self.kernel_number,
             ),
