@@ -28,6 +28,7 @@ class MSCAAttention(nn.Module):
         attn = self.conv0(x)
  
         attn_0 = self.conv0_1(attn)
+        
         attn_0 = self.conv0_2(attn_0)
  
         attn_1 = self.conv1_1(attn)
@@ -130,32 +131,22 @@ class HWMSCAAttention(nn.Module):
  
         return attn * u
  
-class MSCAAttention2(nn.Module):
 
-    def __init__(self, dim, reduction=16):
-        super().__init__()
-        self.conv0 = nn.Conv2d(dim, dim, 5, padding=2, groups=dim)
-        self.conv0_1 = nn.Conv2d(dim, dim, (1, 7), padding=(0, 3), groups=dim)
-        self.conv0_2 = nn.Conv2d(dim, dim, (7, 1), padding=(3, 0), groups=dim)
- 
-        self.conv1_1 = nn.Conv2d(dim, dim, (1, 11), padding=(0, 5), groups=dim)
-        self.conv1_2 = nn.Conv2d(dim, dim, (11, 1), padding=(5, 0), groups=dim)
- 
-        self.conv2_1 = nn.Conv2d(dim, dim, (1, 21), padding=(0, 10), groups=dim)
-        self.conv2_2 = nn.Conv2d(dim, dim, (21, 1), padding=(10, 0), groups=dim)
-        self.conv3 = nn.Conv2d(dim, dim, 1)
+class MSCAAttention2(MSCAAttention):
+    def __init__(self, dim):
+        super().__init__(dim)
+        self.conv_0 = nn.Conv2d(dim, dim, (1, 3), padding=(0, 1), groups=dim)
+        self.conv_1 = nn.Conv2d(dim, dim, (3, 1), padding=(1, 0), groups=dim)
         
-        self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.fc1 = nn.Linear(dim, dim // reduction, bias=False)
-        self.relu = nn.ReLU(inplace=True)
-        self.fc2 = nn.Linear(dim // reduction, dim, bias=False)
-        self.sigmoid = nn.Sigmoid()
- 
+        
     def forward(self, x):
         u = x.clone()
         
         attn = self.conv0(x)
- 
+        
+        attn_ = self.conv_0(attn)
+        attn_ = self.conv_1(attn_)
+        
         attn_0 = self.conv0_1(attn)
         attn_0 = self.conv0_2(attn_0)
  
@@ -164,54 +155,38 @@ class MSCAAttention2(nn.Module):
  
         attn_2 = self.conv2_1(attn)
         attn_2 = self.conv2_2(attn_2)
-        attn = attn + attn_0 + attn_1 + attn_2
- 
+        attn = attn + attn_0 + attn_1 + attn_2 +attn_
+
         attn = self.conv3(attn)
-        
-        se = self.global_avg_pool(attn).view(attn.shape[0], -1)
-        se = self.fc1(se)
-        se = self.relu(se)
-        se = self.fc2(se)
-        se = self.sigmoid(se).view(attn.shape[0], attn.shape[1], 1, 1)
  
-        return attn * u * se
+        return attn * u 
 
-class MSCAAttention3(nn.Module):
-
+class MSCAAttention3(MSCAAttention):
     def __init__(self, dim):
-        super().__init__()
-        self.conv0 = nn.Conv2d(dim, dim, 5, padding=2, groups=dim)
-        
-        self.conv0_1 = nn.Conv2d(dim, dim, (1, 7), padding=(0, 3), groups=dim)
-        self.conv0_2 = nn.Conv2d(dim, dim, (7, 1), padding=(3, 0), groups=dim)
- 
-        self.conv1_1 = nn.Conv2d(dim, dim, (1, 11), padding=(0, 5), groups=dim)
-        self.conv1_2 = nn.Conv2d(dim, dim, (11, 1), padding=(5, 0), groups=dim)
- 
-        self.conv2_1 = nn.Conv2d(dim, dim, (1, 21), padding=(0, 10), groups=dim)
-        self.conv2_2 = nn.Conv2d(dim, dim, (21, 1), padding=(10, 0), groups=dim)
-        self.conv3 = nn.Conv2d(dim, dim, 1)
- 
+        super().__init__(dim)
+        self.scale_weights = nn.Parameter(torch.ones(3))  
+
     def forward(self, x):
         u = x.clone()
         
         attn = self.conv0(x)
+ 
+        attn_0 = self.conv0_1(attn)
+        attn_w0 = attn_0
+        attn_0 = self.conv0_2(attn_0)
 
-        attn_0_w = self.conv0_1(attn)
-        attn_1_w = self.conv1_1(attn)
-        attn_2_w = self.conv2_1(attn)
-        attn_w = attn_0_w + attn_1_w + attn_2_w
-        attn_w = self.conv3(attn_w)
+        attn_1 = self.conv1_1(attn)
+        attn_w1 = attn_1
+        attn_1 = self.conv1_2(attn_1)
+
+        attn_2 = self.conv2_1(attn)
+        attn_w2 =attn_2
+        attn_2 = self.conv2_2(attn_2)
+        scale_weights = torch.sigmoid(self.scale_weights)
         
-        attn_0_h = self.conv0_2(attn)
-        attn_1_h = self.conv1_2(attn)
-        attn_2_h = self.conv2_2(attn)
-        attn_h = attn_0_h + attn_1_h + attn_2_h
-        attn_h = self.conv3(attn_h)
-
-        # alpha = 0.5
-        # attn = attn + alpha * attn_w + (1 - alpha) * attn_h
-        attn = attn + attn_w + attn_h
+        attn_w = scale_weights[0] * attn_w0 + scale_weights[1] * attn_w1 + scale_weights[2] * attn_w2
+        
+        attn = attn + attn_0 + attn_1 + attn_2 + attn_w
  
         attn = self.conv3(attn)
  
@@ -240,8 +215,6 @@ class MSCAAttention4(MSCAAttention):
         super().__init__(dim)
         
         self.SA = SpatialAttention()
-        self.conv2_1 = nn.Conv2d(dim, dim, (1, 7), padding=(0, 9), groups=dim, dilation=3)
-        self.conv2_2 = nn.Conv2d(dim, dim, (7, 1), padding=(9, 0), groups=dim, dilation=3)
 
  
     def forward(self, x):
@@ -260,9 +233,7 @@ class MSCAAttention4(MSCAAttention):
 
         attn = attn + attn_0 + attn_1 + attn_2
 
-        attn = self.SA(attn) * attn
-
-        attn = self.conv3(attn)
+        attn = self.conv3(self.SA(attn) * attn)
         
         return attn * u
     
@@ -284,11 +255,9 @@ class MSCAAttention5(nn.Module):
         self.conv2_3 = nn.Conv2d(dim, dim, (1, 5), padding=(0, 5), groups=dim, dilation= 4)
         self.conv2_4 = nn.Conv2d(dim, dim, (5, 1), padding=(5, 0), groups=dim, dilation= 4)
         
-        
         self.conv3 = nn.Conv2d(dim, dim, 1)
         
-        
- 
+    
     def forward(self, x):
         u = x.clone()
         
@@ -330,7 +299,7 @@ class MSCAAttention6(nn.Module):
         self.conv3 = nn.Conv2d(dim, dim, 1)
 
         # **可学习的权重参数**
-        self.scale_weights = nn.Parameter(torch.ones(3))  
+        self.scale_weights = nn.Parameter(torch.ones(4))   # 初始化为均匀分布的权重
 
     def forward(self, x):
         u = x.clone()
@@ -348,10 +317,10 @@ class MSCAAttention6(nn.Module):
         attn_2 = self.conv2_2(attn_2)
 
         # **归一化可学习权重**
-        scale_weights = F.softmax(self.scale_weights, dim=0)
+        scale_weights = torch.sigmoid(self.scale_weights)
 
         # **加权融合不同尺度**
-        attn = scale_weights[0] * attn_0 + scale_weights[1] * attn_1 + scale_weights[2] * attn_2
+        attn = scale_weights[0] * attn_0 + scale_weights[1] * attn_1 + scale_weights[2] * attn_2 + scale_weights[3] * attn
 
         attn = self.conv3(attn)
 
@@ -417,4 +386,3 @@ if __name__ == '__main__':
 
     # 检查输出内容
     # print("Output:", output)
-     
