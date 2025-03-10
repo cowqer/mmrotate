@@ -1,4 +1,4 @@
-_base_ = ['../rotated_reppoints/rotated_reppoints_r50_fpn_1x_dota_oc_GPC.py']
+_base_ = ['../rotated_reppoints/rotated_reppoints_r50_fpn_1x_dota_le135_GPC.py']
 
 model = dict(
     bbox_head=dict(use_reassign=True),
