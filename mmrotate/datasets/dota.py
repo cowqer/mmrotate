@@ -197,9 +197,22 @@ class DOTADataset(CustomDataset):
             raise KeyError(f'metric {metric} is not supported')
         annotations = [self.get_ann_info(i) for i in range(len(self))]
         eval_results = {}
+        
+        if ('mAP' and 'F1Score') in metric:
+            mean_ap, mean_f1, _ = eval_rbbox_map(
+                    results,
+                    annotations,
+                    scale_ranges=scale_ranges,
+                    iou_thr=iou_thr,
+                    dataset=self.CLASSES,
+                    logger=logger,
+                    nproc=nproc),
+            eval_results['mAP'] = mean_ap
+            eval_results['F1Score'] = mean_f1
+            
         if metric == 'mAP':
             assert isinstance(iou_thr, float)
-            mean_ap, _ = eval_rbbox_map(
+            mean_ap, _, _ = eval_rbbox_map(
                 results,
                 annotations,
                 scale_ranges=scale_ranges,
@@ -208,6 +221,18 @@ class DOTADataset(CustomDataset):
                 logger=logger,
                 nproc=nproc)
             eval_results['mAP'] = mean_ap
+        elif metric == 'F1Score':
+            assert isinstance(iou_thr, float)
+            _, mean_f1, _ = eval_rbbox_map(
+                results,
+                annotations,
+                scale_ranges=scale_ranges,
+                iou_thr=iou_thr,
+                dataset=self.CLASSES,
+                logger=logger,
+                nproc=nproc)
+            eval_results['F1Score'] = mean_f1
+            
         else:
             raise NotImplementedError
 

@@ -7,7 +7,7 @@ angle_version = 'le90'
 model = dict(
     type='OrientedRCNN',
     backbone=dict(
-        type='ResNet',
+        type='GatedPResNet',
         depth=50,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
@@ -22,7 +22,7 @@ model = dict(
         out_channels=256,
         num_outs=5),
     rpn_head=dict(
-        type='OrientedRPNHead',
+        type='MSCA_ADRPOrientedRPNHead',
         in_channels=256,
         feat_channels=256,
         version=angle_version,
@@ -123,7 +123,7 @@ model = dict(
             max_per_img=2000)))
 
 img_norm_cfg = dict(
-    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=False)
+    mean=[21.55, 21.55, 21.55], std=[24.42, 24.42, 24.42], to_rgb=True)
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotations', with_bbox=True),
@@ -145,7 +145,6 @@ data = dict(
 
 optimizer = dict(lr=0.005)
 # evaluation
-
 evaluation = dict(interval=1, metric='mAP', save_best='auto')
 # learning policy
 lr_config = dict(

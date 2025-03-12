@@ -201,6 +201,8 @@ def eval_rbbox_map(det_results,
         sort_inds = np.argsort(-cls_dets[:, -1])
         tp = np.hstack(tp)[:, sort_inds]
         fp = np.hstack(fp)[:, sort_inds]
+        cls_all_tp = np.sum(tp)
+        cls_all_fp = np.sum(fp)
         # calculate recall and precision with tp and fp
         tp = np.cumsum(tp, axis=1)
         fp = np.cumsum(fp, axis=1)
@@ -214,39 +216,55 @@ def eval_rbbox_map(det_results,
             num_gts = num_gts.item()
         mode = 'area' if not use_07_metric else '11points'
         ap = average_precision(recalls, precisions, mode)
+        
+        cls_all_rec = cls_all_tp / np.maximum(num_gts, eps)
+        cls_all_pre = cls_all_tp / np.maximum((cls_all_tp + cls_all_fp), eps)
+        # cls_all_pre = np.array(cls_all_pre, dtype=np.float32).item()
+        # cls_all_rec = np.array(cls_all_rec, dtype=np.float32).item()
+
+        f1_score = 2 * cls_all_pre * cls_all_rec / np.maximum((cls_all_pre + cls_all_rec),eps)
         eval_results.append({
             'num_gts': num_gts,
             'num_dets': num_dets,
-            'recall': recalls,
-            'precision': precisions,
-            'ap': ap
+            'recall': cls_all_rec,
+            'precision': cls_all_pre,
+            'ap': ap,
+            'F1': f1_score
         })
     pool.close()
     if scale_ranges is not None:
         # shape (num_classes, num_scales)
         all_ap = np.vstack([cls_result['ap'] for cls_result in eval_results])
+        all_f1 = np.vstack([cls_result['F1'] for cls_result in eval_results])
         all_num_gts = np.vstack(
             [cls_result['num_gts'] for cls_result in eval_results])
         mean_ap = []
+        mean_f1 = []
         for i in range(num_scales):
             if np.any(all_num_gts[:, i] > 0):
                 mean_ap.append(all_ap[all_num_gts[:, i] > 0, i].mean())
+                mean_f1.append(all_f1[all_num_gts[:, i] > 0, i].mean())
             else:
                 mean_ap.append(0.0)
+                mean_f1.append(0.0)
     else:
         aps = []
+        f1s = []
         for cls_result in eval_results:
             if cls_result['num_gts'] > 0:
                 aps.append(cls_result['ap'])
+                f1s.append(cls_result['F1'])
         mean_ap = np.array(aps).mean().item() if aps else 0.0
+        mean_f1 = np.array(f1s).mean().item() if f1s else 0.0
 
     print_map_summary(
-        mean_ap, eval_results, dataset, area_ranges, logger=logger)
+        mean_ap, mean_f1, eval_results, dataset, area_ranges, logger=logger)
 
-    return mean_ap, eval_results
+    return mean_ap, mean_f1, eval_results
 
 
 def print_map_summary(mean_ap,
+                      mean_f1,
                       results,
                       dataset=None,
                       scale_ranges=None,
@@ -279,12 +297,17 @@ def print_map_summary(mean_ap,
     num_classes = len(results)
 
     recalls = np.zeros((num_scales, num_classes), dtype=np.float32)
+    precisions = np.zeros((num_scales, num_classes), dtype=np.float32)
     aps = np.zeros((num_scales, num_classes), dtype=np.float32)
+    f1s = np.zeros((num_scales, num_classes), dtype=np.float32)
     num_gts = np.zeros((num_scales, num_classes), dtype=int)
     for i, cls_result in enumerate(results):
         if cls_result['recall'].size > 0:
             recalls[:, i] = np.array(cls_result['recall'], ndmin=2)[:, -1]
+            precisions[:, i] = np.array(cls_result['precision'], ndmin=2)[:, -1]
+
         aps[:, i] = cls_result['ap']
+        f1s[:, i] = cls_result['F1']
         num_gts[:, i] = cls_result['num_gts']
 
     if dataset is None:
@@ -294,8 +317,10 @@ def print_map_summary(mean_ap,
 
     if not isinstance(mean_ap, list):
         mean_ap = [mean_ap]
+    if not isinstance(mean_f1, list):
+        mean_f1 = [mean_f1]
 
-    header = ['class', 'gts', 'dets', 'recall', 'ap']
+    header = ['class', 'gts', 'dets', 'recall', 'precision','ap', 'F1']
     for i in range(num_scales):
         if scale_ranges is not None:
             print_log(f'Scale range {scale_ranges[i]}', logger=logger)
@@ -303,10 +328,11 @@ def print_map_summary(mean_ap,
         for j in range(num_classes):
             row_data = [
                 label_names[j], num_gts[i, j], results[j]['num_dets'],
-                f'{recalls[i, j]:.3f}', f'{aps[i, j]:.3f}'
+                f'{recalls[i, j]:.3f}', f'{precisions[i, j]:.3f}', f'{aps[i, j]:.3f}', f'{f1s[i, j]:.3f}'
             ]
             table_data.append(row_data)
-        table_data.append(['mAP', '', '', '', f'{mean_ap[i]:.3f}'])
+        append_data = ['mAP, mF1', '', '', '','', f'{mean_ap[i]:.3f}', f'{mean_f1[i]:.3f}']
+        table_data.append(append_data)
         table = AsciiTable(table_data)
         table.inner_footing_row_border = True
         print_log('\n' + table.table, logger=logger)
