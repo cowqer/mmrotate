@@ -1,12 +1,14 @@
 # yapf:disable
 log_config = dict(
-    interval=50,
+    interval=20,
     hooks=[
         dict(type='TextLoggerHook'),
         # dict(type='TensorboardLoggerHook')
     ])
 # yapf:enable
-
+vis_backends = [dict(type='LocalVisBackend')]
+visualizer = dict(
+    type='RotLocalVisualizer', vis_backends=vis_backends, name='visualizer')
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 load_from = None
