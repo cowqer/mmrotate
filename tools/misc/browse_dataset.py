@@ -80,16 +80,36 @@ def main():
     cfg = retrieve_data_cfg(args.config, args.skip_type, args.cfg_options)
 
     dataset = build_dataset(cfg.data.train)
+    loaded_images = set()
+
+    for item in dataset:
+        loaded_images.add(os.path.basename(item['filename']))
+
+    print(f"实际加载的图片数: {len(loaded_images)}")
+
+# 保存加载的图片列表
+    with open("loaded_images.txt", "w") as f:
+        f.writelines("\n".join(sorted(loaded_images)))
+
+    # total_images = len(dataset)
+    # total_annotations = sum(len(item['gt_bboxes']) for item in dataset)
+
+    # print(f"正在可视化的数据集：{dataset.ann_file}")
+    # print(f"📂 数据集图片总数: {total_images}")
+    # print(f"📝 总标注框数: {total_annotations}")
 
     progress_bar = mmcv.ProgressBar(len(dataset))
 
     for item in dataset:
+
         filename = os.path.join(args.output_dir,
                                 Path(item['filename']).name
                                 ) if args.output_dir is not None else None
 
         gt_bboxes = item['gt_bboxes']
         gt_labels = item['gt_labels']
+        
+        print(f"📷 图片: {item['filename']}, 目标数: {len(gt_bboxes)}")
 
         imshow_det_rbboxes(
             item['img'],
